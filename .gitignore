@@ -218,3 +218,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Veri seti ve model dosyaları
+data/
+kido/
+kido_dataset
+*.pt
+*.pth
+
+# macOS
+.DS_Store
