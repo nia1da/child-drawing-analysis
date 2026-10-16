@@ -2,6 +2,7 @@ import argparse
 import os
 import time
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import torch
@@ -125,7 +126,9 @@ def egit(df, ad, boyut=224, epoch=8, lr=1e-4, smoothing=0.1, seed=42, kok=KOK, c
             if not hizli:
                 torch.save(model.state_dict(), f"{cikti}/{isim}.pt")
 
-    kayit = {"tarih": datetime.now().strftime("%Y-%m-%d %H:%M"), "deney": isim, "model": ad, "boyut": boyut,
+    # Colab'ın saati UTC; tarih Türkiye saatiyle yazılır
+    tarih = datetime.now(ZoneInfo("Europe/Istanbul")).strftime("%Y-%m-%d %H:%M")
+    kayit = {"tarih": tarih, "deney": isim, "model": ad, "boyut": boyut,
              "lr": lr, "smoothing": smoothing, "seed": seed, "toplam_epoch": epoch, "en_iyi_epoch": en_iyi_ep,
              "en_iyi_val_f1": round(en_iyi, 4), "dakika": round((time.time() - bas) / 60, 1), "not": not_}
     if hizli:

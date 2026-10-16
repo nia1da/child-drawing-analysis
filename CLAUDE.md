@@ -38,6 +38,8 @@
 - `src/degerlendir.py`: `.pt`'yi bir bölümde (varsayılan test) değerlendirir: macro F1, karışıklık matrisi,
   cinsiyet / eğitim / ikisinin kesişimi alt grup F1'leri; tahminleri `{cikti}/tahminler/{deney}_{bolum}.csv`'ye yazar.
   `python -m src.degerlendir --deney <ad> [--hizli]`.
+- `src/istatistik.py`: alt grup macro F1'leri ve grup farkları için öğrenci bazlı bootstrap %95 GA
+  (`guven_araliklari(kayitli_tahminler(deney))`). Çizim değil öğrenci yeniden örneklenir (aynı öğrencinin çizimleri bağımlı).
 - `src/deneyler_tasi.py`: eski `deneyler.csv`'yi 12 sütunlu düzene çeviren tek seferlik betik.
 - `notebooks/colab.ipynb`: güncel Colab notebook'u; repoyu clone/pull eder, sadece `src/` fonksiyonlarını çağırır.
 - `notebooks/grad_proj.ipynb`: arşiv (ilk keşif ve denemeler). Çıktıları eski sonuçların kaynağı, silinmemeli.
@@ -50,6 +52,14 @@
   eğitim seviyesi + cinsiyete göre stratifiye, seed 42. Aynı öğrencinin çizimleri tek bölümde kalır.
 - Baseline hedef: makaledeki görüntü modeli ≈ %79 F1. Metrik: macro F1.
 - Çözünürlük önemli: 320px, 224px'ten ≈ 3 puan daha iyi.
+
+## Bilinen sonuçlar (2026-10-15)
+- En iyi: convnext_tiny 448px, 8 epoch, lr 1e-4, ls 0.1. Val F1 3 seed'de 0.825 ± 0.003 (s42 0.828, s1 0.823, s2 0.823);
+  s42 test F1 0.830. resnet50 448px test 0.794. En iyi epoch genelde 3–5.
+- Seed'ler arası yayılım ≈ 0.5 puan: 1 puanın altındaki farkları tek seed'le yorumlama, 2–3 seed ile tekrarla.
+- Test setine sadece nihai kıyaslama/raporlama için bak; seçim val ile yapılır.
+- Alt gruplar (s42, test): erkeklerde F1 belirgin düşük (Female 0.853, Male 0.795; ilkokul erkek 0.765).
+- Testte her öğrencinin tam 2 çizimi var (biri mutlu, biri üzgün).
 
 ## Çalışma kuralları
 - Değişken, fonksiyon ve yorumlar **Türkçe** (`egit`, `boyut`, `kayip_fn` gibi).
