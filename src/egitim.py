@@ -11,12 +11,14 @@ from sklearn.metrics import f1_score
 from torchvision import models
 
 from .config import YOLLAR
-from .veri import KOK, metadata_yukle, yukleyiciler
+from .veri import AUGLAR, KOK, metadata_yukle, yukleyiciler
 
 MODELLER = ["resnet50", "efficientnet_b0", "convnext_tiny"]
 # Yeni bir hiperparametre değiştirilmeye başlanırsa buraya sütun olarak eklenmeli
-SUTUNLAR = ["tarih", "deney", "model", "boyut", "lr", "smoothing", "seed",
+SUTUNLAR = ["tarih", "deney", "model", "boyut", "lr", "smoothing", "seed", "augmentation",
             "toplam_epoch", "en_iyi_epoch", "en_iyi_val_f1", "dakika", "not"]
+# Sonradan eklenen sütunlar ve eklenmeden önceki deneylerdeki değerleri (deneyler_tasi kullanır)
+EKLENEN_SUTUNLAR = {"augmentation": "temel"}
 HIZLI_ORNEK = 8  # hızlı modda bölüm başına, her sınıftan görsel sayısı
 
 
@@ -57,9 +59,11 @@ def lr_yaz(lr):
     return f"{mantis.rstrip('0').rstrip('.')}e{int(us)}"
 
 
-def deney_adi(ad, boyut, epoch, lr, smoothing, seed):
-    # Örn. convnext_tiny_320_ep12_lr1e-4_ls0.1_s42; .pt dosyası ve deneyler.csv'deki "deney" bu adı kullanır
-    return f"{ad}_{boyut}_ep{epoch}_lr{lr_yaz(lr)}_ls{smoothing:g}_s{seed}"
+def deney_adi(ad, boyut, epoch, lr, smoothing, seed, aug="temel"):
+    # Örn. convnext_tiny_320_ep12_lr1e-4_ls0.1_s42; .pt dosyası ve deneyler.csv'deki "deney" bu adı kullanır.
+    # aug "temel" değilse sona eklenir (..._s42_aug-renk); böylece önceki deney adları değişmez.
+    ek = "" if aug == "temel" else f"_aug-{aug}"
+    return f"{ad}_{boyut}_ep{epoch}_lr{lr_yaz(lr)}_ls{smoothing:g}_s{seed}{ek}"
 
 
 def deney_benzersiz_mi(isim, cikti):
@@ -76,11 +80,12 @@ def sonuc_dosyasi_kontrol(yol):
     if os.path.exists(yol):
         baslik = pd.read_csv(yol, nrows=0).columns.tolist()
         if baslik != SUTUNLAR:
-            raise RuntimeError(f"{yol} eski sütun düzeninde: {baslik}. Önce yeni düzene ({SUTUNLAR}) taşınmalı.")
+            raise RuntimeError(f"{yol} eski sütun düzeninde: {baslik}. Önce yeni düzene ({SUTUNLAR}) taşınmalı "
+                               "(python -m src.deneyler_tasi).")
 
 
 def egit(df, ad, boyut=224, epoch=8, lr=1e-4, smoothing=0.1, seed=42, kok=KOK, cikti=YOLLAR["cikti"],
-         not_="", hizli=False):
+         aug="temel", not_="", hizli=False):
     """Modeli eğitir, en iyi val F1'li ağırlığı kaydeder ve deneyler.csv'ye bir satır ekler.
 
     hizli=True: her sınıftan birkaç görsel, 1 epoch, küçük batch. Kod yolunu yerelde test etmek
@@ -89,7 +94,7 @@ def egit(df, ad, boyut=224, epoch=8, lr=1e-4, smoothing=0.1, seed=42, kok=KOK, c
     yol = f"{cikti}/deneyler.csv"
     if hizli:
         df, epoch, batch, num_workers = hizli_ornekle(df, seed=seed), 1, 4, 0
-    isim = deney_adi(ad, boyut, epoch, lr, smoothing, seed)
+    isim = deney_adi(ad, boyut, epoch, lr, smoothing, seed, aug)
     if not hizli:
         sonuc_dosyasi_kontrol(yol)
         deney_benzersiz_mi(isim, cikti)
@@ -97,7 +102,7 @@ def egit(df, ad, boyut=224, epoch=8, lr=1e-4, smoothing=0.1, seed=42, kok=KOK, c
         batch, num_workers = 32, 2
 
     torch.manual_seed(seed)
-    tr, va = yukleyiciler(df, boyut, kok, num_workers=num_workers, batch=batch)
+    tr, va = yukleyiciler(df, boyut, kok, num_workers=num_workers, batch=batch, aug=aug)
     model = model_kur(ad)
     optim = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     plan = torch.optim.lr_scheduler.CosineAnnealingLR(optim, T_max=epoch * len(tr))
@@ -129,7 +134,7 @@ def egit(df, ad, boyut=224, epoch=8, lr=1e-4, smoothing=0.1, seed=42, kok=KOK, c
     # Colab'ın saati UTC; tarih Türkiye saatiyle yazılır
     tarih = datetime.now(ZoneInfo("Europe/Istanbul")).strftime("%Y-%m-%d %H:%M")
     kayit = {"tarih": tarih, "deney": isim, "model": ad, "boyut": boyut,
-             "lr": lr, "smoothing": smoothing, "seed": seed, "toplam_epoch": epoch, "en_iyi_epoch": en_iyi_ep,
+             "lr": lr, "smoothing": smoothing, "seed": seed, "augmentation": aug, "toplam_epoch": epoch, "en_iyi_epoch": en_iyi_ep,
              "en_iyi_val_f1": round(en_iyi, 4), "dakika": round((time.time() - bas) / 60, 1), "not": not_}
     if hizli:
         print(f"[hızlı mod] {cihaz} | {len(tr.dataset)} train / {len(va.dataset)} val görsel | kayıt yazılmadı")
@@ -147,8 +152,9 @@ if __name__ == "__main__":
     p.add_argument("--lr", type=float, default=1e-4)
     p.add_argument("--smoothing", type=float, default=0.1)
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--aug", choices=AUGLAR, default="temel")
     p.add_argument("--not", dest="not_", default="")
     p.add_argument("--hizli", action="store_true", help="birkaç görsel, 1 epoch; model ve sonuç kaydedilmez")
     a = p.parse_args()
     egit(metadata_yukle(), a.model, boyut=a.boyut, epoch=a.epoch, lr=a.lr, smoothing=a.smoothing,
-         seed=a.seed, not_=a.not_, hizli=a.hizli)
+         seed=a.seed, aug=a.aug, not_=a.not_, hizli=a.hizli)

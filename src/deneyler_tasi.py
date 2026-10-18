@@ -1,9 +1,15 @@
-"""Eski deneyler.csv'yi (deney, en_iyi_val_f1, epoch, dakika) yeni 12 sütunlu düzene taşır.
+"""deneyler.csv'yi güncel sütun düzenine (egitim.SUTUNLAR) taşır. İki durum:
+
+1. İlk düzen (deney, en_iyi_val_f1, epoch, dakika): parametreler deney adından çıkarılır.
+   Orijinal deneyler_eski.csv olarak saklanır.
+2. Sonradan eklenen sütunları eksik dosya (örn. augmentation): eksik sütunlar
+   egitim.EKLENEN_SUTUNLAR'daki değerle doldurulur. Orijinal deneyler_yedek_<tarih>.csv olarak saklanır.
+
+İlk düzen için ayrıntılar:
 
 Parametreler eski deney adından (örn. resnet50_320px_lr0.0001_ls0.1_s42) çıkarılır.
 Ad epoch sayısını içermediği için toplam_epoch, notebook'taki "Sonuç:" çıktılarıyla
 eşleşen satırlar için oradan alınır; eşleşmeyenlerde boş kalır. tarih bilinmediği için boştur.
-Orijinal dosya deneyler_eski.csv olarak saklanır.
 
 Kullanım: .venv/bin/python -m src.deneyler_tasi
 """
@@ -12,14 +18,18 @@ import json
 import os
 import re
 import shutil
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
 from .config import REPO, YOLLAR
-from .egitim import SUTUNLAR
+from .egitim import EKLENEN_SUTUNLAR, SUTUNLAR
 
 ESKI_AD = re.compile(r"^(?P<model>.+)_(?P<boyut>\d+)px_lr(?P<lr>[^_]+)_ls(?P<smoothing>[^_]+)_s(?P<seed>\d+)$")
 NOTEBOOK = f"{REPO}/notebooks/grad_proj.ipynb"
+ILK_DUZEN = ["deney", "en_iyi_val_f1", "epoch", "dakika"]
+TAM_SAYI = ["boyut", "seed", "toplam_epoch", "en_iyi_epoch"]
 
 
 def notebook_sonuclari(yol=NOTEBOOK):
@@ -39,15 +49,7 @@ def notebook_sonuclari(yol=NOTEBOOK):
     return sonuclar
 
 
-def tasi(cikti=YOLLAR["cikti"]):
-    yol, eski_yol = f"{cikti}/deneyler.csv", f"{cikti}/deneyler_eski.csv"
-    eski = pd.read_csv(yol)
-    if eski.columns.tolist() == SUTUNLAR:
-        print("deneyler.csv zaten yeni düzende, bir şey yapılmadı.")
-        return
-    if os.path.exists(eski_yol):
-        raise FileExistsError(f"{eski_yol} zaten var; üzerine yazmamak için durdum.")
-
+def _ilk_duzenden(eski):
     nb = notebook_sonuclari()
     satirlar = []
     for _, r in eski.iterrows():
@@ -61,11 +63,34 @@ def tasi(cikti=YOLLAR["cikti"]):
             "toplam_epoch": nb.get(anahtar), "en_iyi_epoch": int(r.epoch),
             "en_iyi_val_f1": r.en_iyi_val_f1, "dakika": r.dakika, "not": "eski kayıt",
         })
-    yeni = pd.DataFrame(satirlar, columns=SUTUNLAR).astype({"toplam_epoch": "Int64"})
+    return pd.DataFrame(satirlar, columns=SUTUNLAR)
 
-    shutil.copy2(yol, eski_yol)
+
+def tasi(cikti=YOLLAR["cikti"]):
+    yol = f"{cikti}/deneyler.csv"
+    eski = pd.read_csv(yol)
+    sutunlar = eski.columns.tolist()
+    eksik = set(SUTUNLAR) - set(sutunlar)
+    if sutunlar == SUTUNLAR:
+        print("deneyler.csv zaten güncel düzende, bir şey yapılmadı.")
+        return
+    if sutunlar == ILK_DUZEN:
+        yedek, yeni = f"{cikti}/deneyler_eski.csv", _ilk_duzenden(eski)
+    elif set(sutunlar) < set(SUTUNLAR) and eksik <= set(EKLENEN_SUTUNLAR):
+        zaman = datetime.now(ZoneInfo("Europe/Istanbul")).strftime("%Y%m%d-%H%M")
+        yedek, yeni = f"{cikti}/deneyler_yedek_{zaman}.csv", eski.reindex(columns=SUTUNLAR)
+    else:
+        raise ValueError(f"Tanınmayan sütun düzeni: {sutunlar}")
+    if os.path.exists(yedek):
+        raise FileExistsError(f"{yedek} zaten var; üzerine yazmamak için durdum.")
+
+    for sutun, deger in EKLENEN_SUTUNLAR.items():
+        yeni[sutun] = yeni[sutun].fillna(deger)
+    yeni = yeni.astype({k: "Int64" for k in TAM_SAYI})
+
+    shutil.copy2(yol, yedek)
     yeni.to_csv(yol, index=False)
-    print(f"{len(yeni)} satır taşındı; orijinal: {eski_yol}")
+    print(f"{len(yeni)} satır güncel düzene taşındı; orijinal: {yedek}")
     print(yeni.to_string(index=False))
 
 

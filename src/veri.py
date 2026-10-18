@@ -87,17 +87,27 @@ def kareye_pad(img, boyut):
     return ImageOps.pad(img.convert("RGB"), (boyut, boyut), color="white")
 
 
-def donusumler(boyut=224):
+AUGLAR = ["temel", "renk"]
+
+
+def donusumler(boyut=224, aug="temel"):
+    """aug="temel": yatay çevirme + küçük döndürme.
+    aug="renk": + renk bozma ve gri tonlama; modeli renk yerine içerik ve şekle bakmaya zorlamak için."""
+    if aug not in AUGLAR:
+        raise ValueError(f"Bilinmeyen aug: {aug} (seçenekler: {AUGLAR})")
     # lambda yerine partial: macOS'ta DataLoader worker'ları spawn ile açıldığı için pickle edilebilmeli
     pad = partial(kareye_pad, boyut=boyut)
-    e_tf = transforms.Compose([transforms.Lambda(pad), transforms.RandomHorizontalFlip(),
-                               transforms.RandomRotation(5, fill=255), transforms.ToTensor(), transforms.Normalize(ORT, STD)])
+    e_adimlar = [transforms.Lambda(pad), transforms.RandomHorizontalFlip(), transforms.RandomRotation(5, fill=255)]
+    if aug == "renk":
+        e_adimlar += [transforms.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.6, hue=0.1),
+                      transforms.RandomGrayscale(p=0.3)]
+    e_tf = transforms.Compose(e_adimlar + [transforms.ToTensor(), transforms.Normalize(ORT, STD)])
     d_tf = transforms.Compose([transforms.Lambda(pad), transforms.ToTensor(), transforms.Normalize(ORT, STD)])
     return e_tf, d_tf
 
 
-def yukleyiciler(df, boyut=224, kok=KOK, num_workers=2, batch=32):
-    e_tf, d_tf = donusumler(boyut)
+def yukleyiciler(df, boyut=224, kok=KOK, num_workers=2, batch=32, aug="temel"):
+    e_tf, d_tf = donusumler(boyut, aug)
     tr = DataLoader(KidoDataset(df[df.bolum == "train"], e_tf, kok), batch_size=batch, shuffle=True, num_workers=num_workers)
     va = DataLoader(KidoDataset(df[df.bolum == "val"], d_tf, kok), batch_size=batch * 2, num_workers=num_workers)
     return tr, va
