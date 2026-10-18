@@ -59,7 +59,8 @@ def metrikler(sonuc):
     return genel, karisiklik, gruplar
 
 
-def degerlendir(df, deney, model=None, boyut=None, bolum="test", kok=KOK, cikti=YOLLAR["cikti"], hizli=False):
+def degerlendir(df, deney, model=None, boyut=None, bolum="test", kok=KOK, cikti=YOLLAR["cikti"], hizli=False,
+                yazdir=True):
     """hizli=True: bölümden her sınıftan birkaç görsel; .pt yoksa ImageNet ağırlıklı model kullanılır
     (sadece kod yolunu test etmek için) ve tahminler kaydedilmez."""
     if model is None or boyut is None:
@@ -85,9 +86,10 @@ def degerlendir(df, deney, model=None, boyut=None, bolum="test", kok=KOK, cikti=
 
     print(f"== {deney} | {bolum} | {cihaz} ==")
     print(f"Genel: n={int(genel.n)} | doğruluk {genel.dogruluk:.4f} | macro F1 {genel.macro_f1:.4f}\n")
-    print(karisiklik, "\n")
-    for ad, t in gruplar.items():
-        print(f"-- {ad} --\n{t}\n")
+    if yazdir:
+        print(karisiklik, "\n")
+        for ad, t in gruplar.items():
+            print(f"-- {ad} --\n{t}\n")
 
     if hizli:
         print("[hızlı mod] tahminler kaydedilmedi")
