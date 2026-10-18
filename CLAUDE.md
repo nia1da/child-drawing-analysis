@@ -32,7 +32,8 @@
 
 ## Kod yapısı
 - `src/config.py`: ortam algılama ve `YOLLAR` (`kok`, `zip`, `metadata`, `cikti`).
-- `src/veri.py`: `veri_hazirla` (zip'i açar), metadata tablosu, `KidoDataset`, dönüşümler (beyaz pad ile kare), `yukleyiciler`.
+- `src/veri.py`: `veri_hazirla` (zip'i açar), metadata tablosu, `KidoDataset`, dönüşümler (beyaz pad ile kare;
+  `aug`: `temel` = çevirme + döndürme, `renk` = + renk bozma, gri tonlama), `yukleyiciler`.
 - `src/bolme.py`: `stratifiye_bol` → `bolum` sütunu (train/val/test).
 - `src/egitim.py`: `cihaz_sec`, `model_kur` (resnet50, efficientnet_b0, convnext_tiny), `egit`; `python -m src.egitim` CLI'ı.
 - `src/degerlendir.py`: `.pt`'yi bir bölümde (varsayılan test) değerlendirir: macro F1, karışıklık matrisi,
@@ -40,7 +41,9 @@
   `python -m src.degerlendir --deney <ad> [--hizli]`.
 - `src/istatistik.py`: alt grup macro F1'leri ve grup farkları için öğrenci bazlı bootstrap %95 GA
   (`guven_araliklari(kayitli_tahminler(deney))`). Çizim değil öğrenci yeniden örneklenir (aynı öğrencinin çizimleri bağımlı).
-- `src/deneyler_tasi.py`: eski `deneyler.csv`'yi 12 sütunlu düzene çeviren tek seferlik betik.
+- `src/analiz.py`: kayıtlı tahminler üzerinde güven bandı (`esik_kaydet`/`esik_yukle`/`guven_bandi`; eşik val'de,
+  `{deney}_esik.json`), `hata_yonu` (mutlu→üzgün / üzgün→mutlu, alt grup) ve `karsilastir` (seed ortalamalı ayar kıyası).
+- `src/deneyler_tasi.py`: `deneyler.csv`'yi güncel düzene taşır (ilk 4 sütunlu düzen ya da eksik yeni sütunlar).
 - `notebooks/colab.ipynb`: güncel Colab notebook'u; repoyu clone/pull eder, sadece `src/` fonksiyonlarını çağırır.
 - `notebooks/grad_proj.ipynb`: arşiv (ilk keşif ve denemeler). Çıktıları eski sonuçların kaynağı, silinmemeli.
 - KIDO yapısı: `Dataset/Images/{Emotion,Gender,Education}/{train,test}/<sınıf>/`, `Dataset/Texts/` aynı düzende.
@@ -60,6 +63,10 @@
 - Test setine sadece nihai kıyaslama/raporlama için bak; seçim val ile yapılır.
 - Alt gruplar (s42, test): erkeklerde F1 belirgin düşük (Female 0.853, Male 0.795; ilkokul erkek 0.765).
 - Testte her öğrencinin tam 2 çizimi var (biri mutlu, biri üzgün).
+- Hata analizi (s42, test): ilkokul erkek hatası tek yönlü, mutlu çizimlerin %33.7'si "üzgün" (diğer gruplar %11–19).
+  Seyrek/az renkli mutlu çizimler etkili ama aynı renklilikte de fark sürüyor. Bootstrap: ilkokul kız−erkek farkı anlamlı,
+  ortaokulda değil. Model güveni anlamlı: güven <0.5 → %64, ≥0.8 → %92–97 doğruluk.
+- Gruba özel (cinsiyete göre) eşik kullanılmaz: model girdisi olarak cinsiyet gerektirir, etik açıdan sorunlu.
 
 ## Çalışma kuralları
 - Değişken, fonksiyon ve yorumlar **Türkçe** (`egit`, `boyut`, `kayip_fn` gibi).
@@ -69,8 +76,10 @@
   bölüm başına her sınıftan 8 görsel, 1 epoch, batch 4. Hızlı mod model kaydetmez ve `deneyler.csv`'ye yazmaz;
   gerçek sonuçlar sadece Colab'daki tam eğitimlerden gelir.
 - Her deneme Drive'daki `deneyler.csv`'ye bir satır ekler. Sütunlar:
-  `tarih, deney, model, boyut, lr, smoothing, seed, toplam_epoch, en_iyi_epoch, en_iyi_val_f1, dakika, not`
-  - Yeni bir hiperparametre değiştirilmeye başlanırsa (batch size, augmentation vb.) o da sütun olarak eklenmeli.
+  `tarih, deney, model, boyut, lr, smoothing, seed, augmentation, toplam_epoch, en_iyi_epoch, en_iyi_val_f1, dakika, not`
+  - Yeni bir hiperparametre değiştirilmeye başlanırsa (batch size vb.) o da sütun olarak eklenmeli: `SUTUNLAR`'a ekle,
+    önceki deneylerdeki değerini `EKLENEN_SUTUNLAR`'a yaz; `deneyler_tasi` mevcut dosyayı yedekleyip sütunu doldurur.
+    Varsayılan değer deney adına eklenmez (eski adlar değişmesin), farklı değer sona ek olarak gelir (`..._s42_aug-renk`).
   - Eski satırlar silinmez; şemaya taşınırken bilinmeyen alanlar boş bırakılır, `not` = "eski kayıt".
   - Sütunlar `egitim.SUTUNLAR`'da. `egit()` başlığı farklı bir dosyaya yazmayı eğitimden önce reddeder.
 - Deney adı (`egitim.deney_adi`) benzersizdir ve hem `.pt` dosya adı hem `deney` sütunudur:
