@@ -100,11 +100,29 @@
   eğitim seviyesi + cinsiyete göre stratifiye, seed 42. Aynı öğrencinin çizimleri tek bölümde kalır.
 - Baseline hedef: makaledeki görüntü modeli ≈ %79 F1. Metrik: macro F1.
 - Çözünürlük önemli: 320px, 224px'ten ≈ 3 puan daha iyi.
+- **Duygu sınıflandırıcısı donduruldu (2026-10-19).** Yeni sınıflandırıcı denemesi yapılmaz; model raporda sadece
+  "görev uyumu" ve "mutlu–üzgün ayrışma" için kullanılır. Referans model: Drive'daki
+  `convnext_tiny_320px_lr0.0001_ls0.1_s42.pt` (val F1 **0.8095**; 12 epoch'luk çalıştırma, en iyi epoch 11).
+  `deneyler.csv`'deki 0.811'lik 8 epoch'luk satırın ağırlıkları yok: eski adlar epoch içermediği için sonraki
+  12 epoch'luk çalıştırma aynı `.pt`'nin üzerine yazdı (val'de yeniden değerlendirilerek doğrulandı).
+- Aynı anda hem yerelde hem Colab'da eğitim çalıştırılmaz: ikisi de Drive'daki aynı `deneyler.csv`'ye yazar, çakışır.
+- Sınıf düzeyi (1–8) dosya adının 2. parçasının rakamından çıkarılır (`101-3B-...` → 3; harf şube).
+  1–4 Primary, 5–8 Secondary ile birebir tutarlı. Normlar sınıf düzeyi × görev (mutlu/üzgün) bazında, sadece
+  train bölümünden çıkarılır; val ve test norma girmez.
+
+## Sıradaki iş: ölçüm modülü ("ince dilim")
+- Amaç: tek komutla herhangi bir KIDO çiziminden betimleyici rapor (ölçümler + akran yüzdelikleri). Makine öğrenmesi yok,
+  sadece görüntü işleme. Ölçüm listesi: `docs/olcumler.md`.
+- İlk dilim: çizim maskesi + doluluk oranı, farklı renk sayısı, koyu ton oranı; train normları; JSON + metin rapor.
+  Maske, normlardan önce 24 çizimlik görsel kontrol sayfasıyla kullanıcıya onaylatılır.
+- Rapor betimleyicidir, tanı dili içermez; %5–95 dışındaki değerler ⚠ ile işaretlenir.
 
 ## Bilinen sonuçlar (2026-10-15)
 - En iyi: convnext_tiny 448px, 8 epoch, lr 1e-4, ls 0.1. Val F1 3 seed'de 0.825 ± 0.003 (s42 0.828, s1 0.823, s2 0.823);
   s42 test F1 0.830. resnet50 448px test 0.794. En iyi epoch genelde 3–5.
 - Seed'ler arası yayılım ≈ 0.5 puan: 1 puanın altındaki farkları tek seed'le yorumlama, 2–3 seed ile tekrarla.
+- Yerel tekrar (2026-10-19, RTX 4060, 16 x 2): convnext_tiny 320px 8 epoch val F1 0.8022 (ep 6), 8,4 dk. Colab'daki
+  aynı seed'li 12 epoch çalıştırmasının 8. epoch'u 0.8036; aynı aralıkta kabul edildi.
 - Test setine sadece nihai kıyaslama/raporlama için bak; seçim val ile yapılır.
 - Alt gruplar (s42, test): erkeklerde F1 belirgin düşük (Female 0.853, Male 0.795; ilkokul erkek 0.765).
 - Testte her öğrencinin tam 2 çizimi var (biri mutlu, biri üzgün).
