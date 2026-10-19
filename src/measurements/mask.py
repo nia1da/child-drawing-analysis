@@ -18,6 +18,12 @@ Eşikler KIDO'dan ölçülerek seçildi (2026-10-19, 1500 rastgele çizim):
 - Kırpmadan sonra da kalan tarama kenar çizgileri (kontrol sayfasında görüldü): piksellerinin en az
   EDGE_SHARE'i kenara EDGE_BAND pikselden yakın olan parçalar atılır. Kenardan içeri uzanan boyamalar kalır;
   bedeli: kenara 10 pikselden yakın çizilmiş bir çerçeve de atılır.
+
+Soluk renk bayrağı (kalite kontrol): kağıda çok yakın soluk renkler (S ≈ 15-20) maskeye girmez; bu bazı
+çizimleri etkiler, bazılarını etkilemez. Maskenin FAINT_HALO piksel çevresi ve kenar şeridi dışında, S ≥ FAINT_S
+olan ve en az FAINT_MIN piksellik kümelerin sayfaya oranı ölçülür. Boş kağıtta bu oran 0'dır (2000 çizimde
+ortanca 0). Eşik 110-3H-1081'e (soluk camgöbeği yağmur, oran 0.0019) bakılarak 0.0015 seçildi: çizimlerin
+≈ %9'u bayraklanır. Eşiğin hemen üstündeki 6 örnekten 4'ü gerçek soluk renk, 2'si kağıt lekesi.
 """
 import numpy as np
 from PIL import Image
@@ -29,6 +35,8 @@ COLOR_S = 30  # S bunun üstündeyse çizim (0-255)
 WEAK_V, WEAK_S = 240, 20  # gevşek eşikler: sadece çekirdeğe bağlı parçalarda
 MIN_COMPONENT = 8  # bundan küçük bağlı parçalar gürültü sayılır (piksel)
 EDGE_BAND, EDGE_SHARE = 10, 0.9  # kenar şeridi (piksel) ve parçanın şeritte kalma oranı
+FAINT_S, FAINT_HALO, FAINT_MIN = 14, 3, 20  # soluk renk bayrağı: S eşiği, maske çevresi, en küçük küme
+FAINT_FLAG = 0.0015  # soluk piksel oranı bunu geçerse bayrak
 EIGHT = np.ones((3, 3), bool)  # 8-komşuluk: çapraz değen pikseller aynı parça
 
 
@@ -58,12 +66,24 @@ def remove_small_components(mask, min_size=MIN_COMPONENT):
     return keep[labels]
 
 
+def edge_band(shape, band=EDGE_BAND):
+    edge = np.zeros(shape, bool)
+    edge[:band], edge[-band:], edge[:, :band], edge[:, -band:] = True, True, True, True
+    return edge
+
+
+def faint_color_ratio(hsv, mask):
+    """Maskeye girmeyen soluk renkli piksel kümelerinin sayfaya oranı (kalite kontrol)."""
+    near = ndimage.binary_dilation(mask, iterations=FAINT_HALO) if mask.any() else mask
+    faint = (hsv[..., 1] >= FAINT_S) & ~near & ~edge_band(mask.shape)
+    return float(remove_small_components(faint, FAINT_MIN).mean())
+
+
 def remove_edge_components(mask, band=EDGE_BAND, share=EDGE_SHARE):
     labels, n = ndimage.label(mask, structure=EIGHT)
     if n == 0:
         return mask
-    edge = np.zeros(mask.shape, bool)
-    edge[:band], edge[-band:], edge[:, :band], edge[:, -band:] = True, True, True, True
+    edge = edge_band(mask.shape, band)
     total = np.bincount(labels.ravel(), minlength=n + 1)
     in_band = np.bincount(labels[edge], minlength=n + 1)
     keep = in_band < share * total

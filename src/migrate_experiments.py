@@ -44,7 +44,9 @@ INT_COLUMNS = ["boyut", "seed", "batch", "accum_steps", "toplam_epoch", "en_iyi_
 def notebook_results(path=NOTEBOOK):
     """Notebook çıktılarındaki her "Sonuç:" kaydı -> o çalıştırmada görülen epoch sayısı."""
     results = {}
-    for cell in json.load(open(path, encoding="utf-8"))["cells"]:
+    with open(path, encoding="utf-8") as f:
+        cells = json.load(f)["cells"]
+    for cell in cells:
         for output in cell.get("outputs", []):
             last_epoch = 0
             for line in "".join(output.get("text", "")).splitlines():

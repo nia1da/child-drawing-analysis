@@ -62,12 +62,16 @@
 - Testler: `PY -m unittest discover -s tests -t .` (sentetik veriyle, KIDO gerekmez).
 - Hızlı test: `PY -m src.training --model convnext_tiny --size 320 --quick`,
   `PY -m src.evaluation --experiment convnext_tiny_448px_lr0.0001_ls0.1_s42 --quick`
+- Çizim raporu: `PY -m src.report data/kido/Dataset/Images/Emotion/test/Sadness/205-7G-940-M-S.jpg`
+  (JSON + metin, Drive `raporlar/`). Normlar: `PY -m src.measurements.norms` (train, birkaç dakika).
+  Maske kontrol sayfası: `PY -m src.measurements.mask_check`.
 - Dosyalar her zaman `encoding="utf-8"` ile açılır (Windows'un varsayılanı cp1254).
 
 ## Kod yapısı
 - `src/config.py`: ortam algılama, `PATHS` (`root`, `zip`, `metadata`, `output`), yerel Drive'ı bulma
   (`find_local_drive`), ortama göre eğitim varsayılanları (`DEFAULTS`).
-- `src/data.py`: `prepare_data` (zip'i açar), metadata tablosu (`build_metadata`, `load_metadata`), `KidoDataset`,
+- `src/data.py`: `prepare_data` (zip'i açar), metadata tablosu (`build_metadata`, `load_metadata`; `sinif` dosya
+  adından hesaplanır, kayıtlı CSV'de yok: `grade_from_filename`, `task_from_filename`), `KidoDataset`,
   dönüşümler (`build_transforms`: beyaz pad ile kare; `aug`: `temel` = çevirme + döndürme, `renk` = + renk bozma,
   gri tonlama), `build_loaders`.
 - `src/splits.py`: `stratified_split` → `bolum` sütunu (train/val/test).
@@ -87,7 +91,12 @@
 - `tests/`: `unittest` testleri (`test_splits.py`: aynı öğrenci iki bölümde olmamalı; `test_accumulation.py`:
   16 x 2 ile 32 x 1 aynı ağırlık güncellemesini veriyor mu, epoch sonundaki yarım grup dahil; SGD ile, çünkü Adam'ın
   ilk adımı gradyan ölçeğinden bağımsız ve hatayı gizler; `test_results_file.py`: eski düzen yedeklenip taşınıyor mu,
-  tanınmayan düzende hiçbir şey yazılmıyor mu).
+  tanınmayan düzende hiçbir şey yazılmıyor mu; `test_measurements.py`: maske, ölçümler, soluk renk bayrağı,
+  yüzdelik ve rapor, sentetik görüntülerle).
+- `src/measurements/`: çizim ölçümleri, ayrıntılar ve maske sınırlamaları `docs/olcumler.md`'de.
+  `mask.py` (çizim maskesi, soluk renk bayrağı), `metrics.py` (doluluk, renk sayısı, koyu ton; `MEASUREMENT_VERSION`),
+  `norms.py` (train normları, yüzdelik, kuyruk payları), `mask_check.py` (24 çizimlik görsel kontrol sayfası).
+- `src/report.py`: bir çizim için betimleyici rapor (JSON + metin); ⚠ akranların %5'inden azı bu kadar uçtaysa.
 - `notebooks/colab.ipynb`: güncel Colab notebook'u; repoyu clone/pull eder, sadece `src/` fonksiyonlarını çağırır.
 - `notebooks/grad_proj.ipynb`: arşiv (ilk keşif ve denemeler). Çıktıları eski sonuçların kaynağı, silinmemeli
   (`migrate_experiments` bu çıktıları okur); import'lar yeni adlara güncellendi, çıktılar olduğu gibi.
@@ -110,12 +119,14 @@
   1–4 Primary, 5–8 Secondary ile birebir tutarlı. Normlar sınıf düzeyi × görev (mutlu/üzgün) bazında, sadece
   train bölümünden çıkarılır; val ve test norma girmez.
 
-## Sıradaki iş: ölçüm modülü ("ince dilim")
+## Ölçüm modülü ("ince dilim", ilk dilim 2026-10-19'da tamam)
 - Amaç: tek komutla herhangi bir KIDO çiziminden betimleyici rapor (ölçümler + akran yüzdelikleri). Makine öğrenmesi yok,
-  sadece görüntü işleme. Ölçüm listesi: `docs/olcumler.md`.
-- İlk dilim: çizim maskesi + doluluk oranı, farklı renk sayısı, koyu ton oranı; train normları; JSON + metin rapor.
-  Maske, normlardan önce 24 çizimlik görsel kontrol sayfasıyla kullanıcıya onaylatılır.
-- Rapor betimleyicidir, tanı dili içermez; %5–95 dışındaki değerler ⚠ ile işaretlenir.
+  sadece görüntü işleme. Ölçüm listesi, tanımlar ve maske sınırlamaları: `docs/olcumler.md`.
+- İlk dilim: çizim maskesi (kullanıcı 24 çizimlik kontrol sayfasıyla onayladı) + doluluk oranı, farklı renk sayısı,
+  koyu ton oranı; train normları (sınıf x görev); soluk renk kalite bayrağı; JSON + metin rapor.
+- Rapor betimleyicidir, tanı dili içermez. Bütün çizimleri aynı yönde etkileyen maske hataları kabul (normlar aynı
+  maskeyle); bazı çizimleri etkileyenler raporda kalite bayrağıyla görünür olmalı.
+- Maske ya da ölçüm tanımı değişirse `MEASUREMENT_VERSION` artır, normları yeniden hesapla.
 
 ## Bilinen sonuçlar (2026-10-15)
 - En iyi: convnext_tiny 448px, 8 epoch, lr 1e-4, ls 0.1. Val F1 3 seed'de 0.825 ± 0.003 (s42 0.828, s1 0.823, s2 0.823);

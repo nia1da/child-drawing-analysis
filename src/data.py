@@ -42,6 +42,19 @@ def collect_images(category, root=ROOT):
     return records
 
 
+TASKS = {"H": "Happiness", "S": "Sadness"}  # dosya adındaki duygu harfi
+
+
+def grade_from_filename(file):
+    # Sınıf düzeyi (1-8) dosya adının 2. parçasının rakamı: 101-3B-560-F-H.jpg -> 3 (harf şube)
+    return int(os.path.basename(file).split("-")[1][0])
+
+
+def task_from_filename(file):
+    # Görev (Happiness / Sadness) dosya adının son parçası: 101-3B-560-F-H.jpg -> Happiness
+    return TASKS[os.path.splitext(os.path.basename(file))[0].split("-")[-1]]
+
+
 def build_metadata(root=ROOT):
     """Emotion/Gender/Education klasörlerinden tek bir metadata tablosu kurar."""
     emotion = collect_images("Emotion", root)
@@ -58,12 +71,16 @@ def build_metadata(root=ROOT):
             "cinsiyet": gender[file][1],
             "egitim": education[file][1],
             "ogrenci": "-".join(parts[:3]),  # okul-sınıf-no
+            "sinif": grade_from_filename(file),
         })
     return pd.DataFrame(rows)
 
 
 def load_metadata(path=PATHS["metadata"]):
-    return pd.read_csv(path)
+    # sinif kayıtlı CSV'de yok (Drive'daki dosya değişmesin); yüklerken dosya adından hesaplanır
+    df = pd.read_csv(path)
+    df["sinif"] = df.dosya.map(grade_from_filename)
+    return df
 
 
 def image_path(s, root=ROOT):

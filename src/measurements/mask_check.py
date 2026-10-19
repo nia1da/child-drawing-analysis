@@ -13,15 +13,10 @@ import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 
 from ..config import PATHS
-from ..data import image_path, load_metadata
+from ..data import grade_from_filename as grade, image_path, load_metadata
 from .mask import COLOR_S, drawing_mask, load_drawing, to_hsv
 
 PENCIL_COLOR_RATIO = 0.05  # maskede bu orandan az renkli (S > COLOR_S) piksel varsa karakalem
-
-
-def grade(dosya):
-    # 101-3B-560-F-H.jpg -> 3
-    return int(dosya.split("-")[1][0])
 
 
 def color_ratio(hsv, mask):
