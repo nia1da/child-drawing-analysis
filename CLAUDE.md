@@ -1,51 +1,79 @@
-# Çizim Analiz — Çocuk çizimlerinden duygu sınıflandırma
+# Çizim Analiz — Çocuk çizimleri için uzman karar desteği
 
 ## Proje
-- KIDO veri setiyle (açık, etiketli) çocuk çizimlerinden duygu sınıflandırma: Happiness / Sadness.
-- Uzun vadede uzmana ön-analiz sunan bir karar destek sistemi; Çizim, Yazı, Konuşma ayrı modüller.
-  Şu an sadece **Çizim** modülü. Sistem tanı koymaz, sadece uzmana destek sunar.
-- Modüller bağımsız çalışır; birleşik "risk skoru" üretilmez.
+- Bitirme projesi: çocuk ve ergen psikiyatrisi uzmanına ön-analiz sunan bir karar destek sistemi.
+  Çizim, Yazı, Konuşma ayrı ve bağımsız modüller; şu an sadece **Çizim** modülü.
+- Sistem tanı koymaz, risk skoru üretmez (modüller arası birleşik skor da yok). Çocuğun çizimini betimler ve
+  akranlarıyla karşılaştırır; yorum uzmana kalır.
+- Çizim modülünün asıl çıktısı yorumlanabilir ölçümler:
+  - Kompozisyon: doluluk, ağırlık merkezi, kapsayan kutu, çeyrek dağılımı
+  - Renk: renk sayısı, doygunluk, koyu ton, sıcak/soğuk oranı, renklilik
+  - Çizgi/yapı: kenar yoğunluğu, çizgi uzunluğu ve kalınlığı, bileşen sayısı
+
+  Ölçümler KIDO üzerinden sınıf düzeyine ve göreve (mutlu/üzgün) göre normlara bağlanır; raporda
+  "akranlarının X. yüzdelik diliminde" diye sunulur.
+- Duygu sınıflandırıcısı (KIDO, Happiness / Sadness) sistemin bir parçası: çizimin tipik mutlu/üzgün çizimlere
+  benzerliğini ölçen **görev uyumu** ve aynı çocuğun iki çizimini karşılaştıran **mutlu–üzgün ayrışma** için kullanılır.
+  Çocuğun ruh hali olarak yorumlanmaz.
 - Gerçek klinik çocuk verisi asla bu repoya girmez.
 
 ## Çalışma ortamı
-- Kod yerelde (Mac) yazılır ve test edilir; eğitim Colab'da (T4) yapılır.
+- Kod yerelde (Mac ya da Windows) yazılır ve test edilir; eğitim Colab'da (T4) yapılır.
+  Windows makinede RTX 4060 (8 GB) var: CUDA'lı torch kurulu, kısa denemeler yerelde de koşabilir.
 - Colab repoyu `git pull` ile çeker. Notebook sadece `src/` fonksiyonlarını çağırıp sonuç gösterir,
   notebook'a mantık kodu yazılmaz.
 - Veri ve modeller git'e girmez (`.gitignore`: `data/`, `kido/`, `*.pt`, `*.pth`).
   Drive kökü: `/content/drive/MyDrive/bitirme/` (metadata CSV, `.pt` dosyaları, `deneyler.csv`, KIDO zip'i).
-- Colab'da KIDO zip'i (`bitirme/kido_dataset`) `veri.veri_hazirla()` ile `/content/kido` altına açılır; görseller Drive'dan doğrudan okunmaz (yavaş).
-- Yollar `src/config.py`'deki `YOLLAR`'dan alınır; kodda ve notebook'ta sabit yol yazma.
-  Ortam `COLAB_RELEASE_TAG` ile algılanır, `CIZIM_ORTAM=yerel|colab` ile zorlanabilir.
+- Colab'da KIDO zip'i (`bitirme/kido_dataset`) `data.prepare_data()` ile `/content/kido` altına açılır; görseller Drive'dan doğrudan okunmaz (yavaş).
+- Yollar `src/config.py`'deki `PATHS`'ten alınır; kodda ve notebook'ta sabit yol yazma.
+  Ortam `COLAB_RELEASE_TAG` ile algılanır, `CIZIM_ENV=local|colab` ile zorlanabilir.
   Yerelde: `data/kido/Dataset/Images`, `data/kido_metadata.csv`, `data/ciktilar/`.
-- Cihaz otomatik (`egitim.cihaz_sec`): CUDA > MPS > CPU. float16 AMP sadece CUDA'da.
-- macOS'ta DataLoader worker'ları spawn ile açılır: dönüşümlerde lambda kullanma (pickle edilemez), modül düzeyi fonksiyon + `partial` kullan.
+- Cihaz otomatik (`training.select_device`): CUDA > MPS > CPU. float16 AMP sadece CUDA'da.
+- macOS ve Windows'ta DataLoader worker'ları spawn ile açılır: dönüşümlerde lambda kullanma (pickle edilemez), modül düzeyi fonksiyon + `partial` kullan.
   Aynı sebeple DataLoader kullanan betikler stdin'den değil dosyadan, `if __name__ == "__main__":` altında çalıştırılmalı.
+- Satır sonları `.gitattributes` ile LF (`* text=auto eol=lf`); iki işletim sisteminde aynı kalır.
 
 ## Yerel kurulum ve komutlar
-- Sanal ortam: `.venv/` (Python 3.11). Her komut `.venv/bin/python` ile çalışır.
+- Sanal ortam: `.venv/` (Mac: Python 3.11, Windows: Python 3.12). Komutlardaki `PY` yerine:
+  - Mac: `.venv/bin/python`
+  - Windows: `.venv\Scripts\python` (PowerShell) ya da `.venv/Scripts/python` (Git Bash)
+- Kurulum:
+  - Mac: `python3.11 -m venv .venv` → `PY -m pip install -r requirements.txt`
+  - Windows (NVIDIA GPU): `py -3.12 -m venv .venv` → önce CUDA'lı torch:
+    `PY -m pip install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cu128`,
+    sonra `PY -m pip install -r requirements.txt` (sürüm aynı olduğu için CUDA'lı torch korunur).
 - `requirements.txt` Colab runtime sürümlerine sabitli (Colab: Python 3.13, torch 2.11.0, torchvision 0.26.0).
   Colab sürümleri değişirse güncelle: github.com/googlecolab/backend-info `pip-freeze.txt`.
-- Veri: `data/kido_dataset` (zip) → `data/kido/`. `data/kido_metadata.csv` klasörlerden
-  `stratifiye_bol(metadata_olustur())` ile üretildi; bölüm sayıları Colab çıktısıyla aynı.
-- Hızlı test: `.venv/bin/python -m src.egitim --model convnext_tiny --boyut 320 --hizli`,
-  `.venv/bin/python -m src.degerlendir --deney convnext_tiny_448px_lr0.0001_ls0.1_s42 --hizli`
+  `tzdata`: Windows'ta `zoneinfo` saat dilimi verisi için gerekli.
+- Veri: `PY -c "from src.data import prepare_data; prepare_data()"` zip'i indirir (`data/kido_dataset`) ve `data/kido/`'ya açar.
+  `data/kido_metadata.csv` klasörlerden `stratified_split(build_metadata())` ile üretilir; bölüm sayıları
+  (train 7842, val 1386, test 1632) Colab çıktısıyla aynı.
+- Testler: `PY -m unittest discover -s tests -t .` (sentetik veriyle, KIDO gerekmez).
+- Hızlı test: `PY -m src.training --model convnext_tiny --size 320 --quick`,
+  `PY -m src.evaluation --experiment convnext_tiny_448px_lr0.0001_ls0.1_s42 --quick`
+- Dosyalar her zaman `encoding="utf-8"` ile açılır (Windows'un varsayılanı cp1254).
 
 ## Kod yapısı
-- `src/config.py`: ortam algılama ve `YOLLAR` (`kok`, `zip`, `metadata`, `cikti`).
-- `src/veri.py`: `veri_hazirla` (zip'i açar), metadata tablosu, `KidoDataset`, dönüşümler (beyaz pad ile kare;
-  `aug`: `temel` = çevirme + döndürme, `renk` = + renk bozma, gri tonlama), `yukleyiciler`.
-- `src/bolme.py`: `stratifiye_bol` → `bolum` sütunu (train/val/test).
-- `src/egitim.py`: `cihaz_sec`, `model_kur` (resnet50, efficientnet_b0, convnext_tiny), `egit`; `python -m src.egitim` CLI'ı.
-- `src/degerlendir.py`: `.pt`'yi bir bölümde (varsayılan test) değerlendirir: macro F1, karışıklık matrisi,
-  cinsiyet / eğitim / ikisinin kesişimi alt grup F1'leri; tahminleri `{cikti}/tahminler/{deney}_{bolum}.csv`'ye yazar.
-  `python -m src.degerlendir --deney <ad> [--hizli]`.
-- `src/istatistik.py`: alt grup macro F1'leri ve grup farkları için öğrenci bazlı bootstrap %95 GA
-  (`guven_araliklari(kayitli_tahminler(deney))`). Çizim değil öğrenci yeniden örneklenir (aynı öğrencinin çizimleri bağımlı).
-- `src/analiz.py`: kayıtlı tahminler üzerinde güven bandı (`esik_kaydet`/`esik_yukle`/`guven_bandi`; eşik val'de,
-  `{deney}_esik.json`), `hata_yonu` (mutlu→üzgün / üzgün→mutlu, alt grup) ve `karsilastir` (seed ortalamalı ayar kıyası).
-- `src/deneyler_tasi.py`: `deneyler.csv`'yi güncel düzene taşır (ilk 4 sütunlu düzen ya da eksik yeni sütunlar).
+- `src/config.py`: ortam algılama ve `PATHS` (`root`, `zip`, `metadata`, `output`).
+- `src/data.py`: `prepare_data` (zip'i açar), metadata tablosu (`build_metadata`, `load_metadata`), `KidoDataset`,
+  dönüşümler (`build_transforms`: beyaz pad ile kare; `aug`: `temel` = çevirme + döndürme, `renk` = + renk bozma,
+  gri tonlama), `build_loaders`.
+- `src/splits.py`: `stratified_split` → `bolum` sütunu (train/val/test).
+- `src/training.py`: `select_device`, `build_model` (resnet50, efficientnet_b0, convnext_tiny), `train`; `python -m src.training` CLI'ı.
+- `src/evaluation.py`: `.pt`'yi bir bölümde (varsayılan test) değerlendirir: macro F1, karışıklık matrisi,
+  cinsiyet / eğitim / ikisinin kesişimi alt grup F1'leri; tahminleri `{output}/tahminler/{deney}_{bolum}.csv`'ye yazar.
+  `python -m src.evaluation --experiment <ad> [--split val] [--quick]`.
+- `src/stats.py`: alt grup macro F1'leri ve grup farkları için öğrenci bazlı bootstrap %95 GA
+  (`confidence_intervals(load_predictions(deney))`). Çizim değil öğrenci yeniden örneklenir (aynı öğrencinin çizimleri bağımlı).
+  (`statistics.py` değil: standart kütüphanedeki `statistics` ile çakışır.)
+- `src/analysis.py`: kayıtlı tahminler üzerinde güven bandı (`save_threshold`/`load_threshold`/`confidence_band`;
+  eşik val'de, `{deney}_esik.json`), `error_direction` (mutlu→üzgün / üzgün→mutlu, alt grup) ve `compare`
+  (seed ortalamalı ayar kıyası).
+- `src/migrate_experiments.py`: `deneyler.csv`'yi güncel düzene taşır (ilk 4 sütunlu düzen ya da eksik yeni sütunlar).
+- `tests/`: `unittest` testleri (`test_splits.py`: aynı öğrenci iki bölümde olmamalı).
 - `notebooks/colab.ipynb`: güncel Colab notebook'u; repoyu clone/pull eder, sadece `src/` fonksiyonlarını çağırır.
-- `notebooks/grad_proj.ipynb`: arşiv (ilk keşif ve denemeler). Çıktıları eski sonuçların kaynağı, silinmemeli.
+- `notebooks/grad_proj.ipynb`: arşiv (ilk keşif ve denemeler). Çıktıları eski sonuçların kaynağı, silinmemeli
+  (`migrate_experiments` bu çıktıları okur); import'lar yeni adlara güncellendi, çıktılar olduğu gibi.
 - KIDO yapısı: `Dataset/Images/{Emotion,Gender,Education}/{train,test}/<sınıf>/`, `Dataset/Texts/` aynı düzende.
   Etiketler klasör adlarından okunur. Dosya adı: `okul-sınıf-no-<cinsiyet harfi>-<duygu harfi>.jpg`;
   ilk üç parça öğrenci kimliği (`ogrenci`).
@@ -69,20 +97,24 @@
 - Gruba özel (cinsiyete göre) eşik kullanılmaz: model girdisi olarak cinsiyet gerektirir, etik açıdan sorunlu.
 
 ## Çalışma kuralları
-- Değişken, fonksiyon ve yorumlar **Türkçe** (`egit`, `boyut`, `kayip_fn` gibi).
+- Kod adları (dosya, fonksiyon, sınıf, değişken, CLI bayrakları) **İngilizce**; yorumlar ve ekrana yazdırılan mesajlar Türkçe olabilir.
+- Kayıtlı dosyalardaki adlar **Türkçe kalır**, değiştirilmez (eski kayıtlar bunlara bağlı): `deneyler.csv` sütunları,
+  metadata sütunları (`dosya, split, duygu, cinsiyet, egitim, ogrenci, bolum`), tahmin CSV'leri (`gercek, olasilik_uzgun, tahmin`),
+  `{deney}_esik.json` anahtarları, deney adı biçimi, aug değerleri (`temel`, `renk`), Drive klasör/dosya adları.
+  Koddaki `df.duygu`, `t.gercek` gibi erişimler bu yüzden Türkçe.
 - Git işlemlerini (commit, branch, push) kullanıcı yapar. Claude sadece kodu düzenler,
   değişiklikleri küçük ve anlamlı parçalar halinde tutar ve neyin değiştiğini özetler.
-- Eğitim kodunda değişiklik yapınca Colab'a göndermeden önce `--hizli` (`egit(..., hizli=True)`) ile yerelde test et:
+- Eğitim kodunda değişiklik yapınca Colab'a göndermeden önce `--quick` (`train(..., quick=True)`) ile yerelde test et:
   bölüm başına her sınıftan 8 görsel, 1 epoch, batch 4. Hızlı mod model kaydetmez ve `deneyler.csv`'ye yazmaz;
   gerçek sonuçlar sadece Colab'daki tam eğitimlerden gelir.
 - Her deneme Drive'daki `deneyler.csv`'ye bir satır ekler. Sütunlar:
   `tarih, deney, model, boyut, lr, smoothing, seed, augmentation, toplam_epoch, en_iyi_epoch, en_iyi_val_f1, dakika, not`
-  - Yeni bir hiperparametre değiştirilmeye başlanırsa (batch size vb.) o da sütun olarak eklenmeli: `SUTUNLAR`'a ekle,
-    önceki deneylerdeki değerini `EKLENEN_SUTUNLAR`'a yaz; `deneyler_tasi` mevcut dosyayı yedekleyip sütunu doldurur.
+  - Yeni bir hiperparametre değiştirilmeye başlanırsa (batch size vb.) o da sütun olarak eklenmeli: `COLUMNS`'a ekle,
+    önceki deneylerdeki değerini `ADDED_COLUMNS`'a yaz; `migrate_experiments` mevcut dosyayı yedekleyip sütunu doldurur.
     Varsayılan değer deney adına eklenmez (eski adlar değişmesin), farklı değer sona ek olarak gelir (`..._s42_aug-renk`).
   - Eski satırlar silinmez; şemaya taşınırken bilinmeyen alanlar boş bırakılır, `not` = "eski kayıt".
-  - Sütunlar `egitim.SUTUNLAR`'da. `egit()` başlığı farklı bir dosyaya yazmayı eğitimden önce reddeder.
-- Deney adı (`egitim.deney_adi`) benzersizdir ve hem `.pt` dosya adı hem `deney` sütunudur:
-  `convnext_tiny_320_ep12_lr1e-4_ls0.1_s42`. Aynı ad `.pt` olarak ya da `deneyler.csv`'de varsa `egit()` eğitimden önce hata verir.
+  - Sütunlar `training.COLUMNS`'ta. `train()` başlığı farklı bir dosyaya yazmayı eğitimden önce reddeder.
+- Deney adı (`training.experiment_name`) benzersizdir ve hem `.pt` dosya adı hem `deney` sütunudur:
+  `convnext_tiny_320_ep12_lr1e-4_ls0.1_s42`. Aynı ad `.pt` olarak ya da `deneyler.csv`'de varsa `train()` eğitimden önce hata verir.
   Eski satırlar eski adları (`..._320px_lr0.0001_ls0.1_s42`) korur; mevcut `.pt` dosyalarının adı değiştirilmez.
-- Eski düzendeki `deneyler.csv` `python -m src.deneyler_tasi` ile taşınır (orijinal `deneyler_eski.csv` olarak saklanır).
+- Eski düzendeki `deneyler.csv` `python -m src.migrate_experiments` ile taşınır (orijinal `deneyler_eski.csv` olarak saklanır).
