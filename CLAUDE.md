@@ -55,7 +55,7 @@
     sonra `PY -m pip install -r requirements.txt` (sürüm aynı olduğu için CUDA'lı torch korunur).
 - `requirements.txt` Colab runtime sürümlerine sabitli (Colab: Python 3.13, torch 2.11.0, torchvision 0.26.0).
   Colab sürümleri değişirse güncelle: github.com/googlecolab/backend-info `pip-freeze.txt`.
-  `tzdata`: Windows'ta `zoneinfo` saat dilimi verisi için gerekli.
+  `tzdata`: Windows'ta `zoneinfo` saat dilimi verisi için gerekli. `scipy`, `scikit-image`: ölçümler (Canny, iskelet).
 - Veri: `PY -c "from src.data import prepare_data; prepare_data()"` zip'i indirir (`data/kido_dataset`) ve `data/kido/`'ya açar.
   `data/kido_metadata.csv` klasörlerden `stratified_split(build_metadata())` ile üretilir; bölüm sayıları
   (train 7842, val 1386, test 1632) Colab çıktısıyla aynı.
@@ -94,9 +94,12 @@
   tanınmayan düzende hiçbir şey yazılmıyor mu; `test_measurements.py`: maske, ölçümler, soluk renk bayrağı,
   yüzdelik ve rapor, sentetik görüntülerle).
 - `src/measurements/`: çizim ölçümleri, ayrıntılar ve maske sınırlamaları `docs/olcumler.md`'de.
-  `mask.py` (çizim maskesi, soluk renk bayrağı), `metrics.py` (doluluk, renk sayısı, koyu ton; `MEASUREMENT_VERSION`),
+  `mask.py` (çizim maskesi, soluk renk bayrağı), `metrics.py` (tablodaki bütün ölçümler, `MEASURES`;
+  `MEASUREMENT_VERSION`),
   `norms.py` (train normları, yüzdelik, kuyruk payları), `mask_check.py` (24 çizimlik görsel kontrol sayfası).
-- `src/report.py`: bir çizim için betimleyici rapor (JSON + metin); ⚠ akranların %5'inden azı bu kadar uçtaysa.
+- `src/report.py`: bir çizim için betimleyici rapor (JSON + metin); JSON'da bütün ölçümler, metinde sadece
+  `TEXT_MEASURES` (doluluk, renk sayısı, renklilik, koyu ton, detay = kenar yoğunluğu, bu sırayla).
+  ⚠ akranların %5'inden azı bu kadar uçtaysa; grup 100'den küçükse (`MIN_GROUP`) ⚠ yerine "grup küçük" notu.
 - `notebooks/colab.ipynb`: güncel Colab notebook'u; repoyu clone/pull eder, sadece `src/` fonksiyonlarını çağırır.
 - `notebooks/grad_proj.ipynb`: arşiv (ilk keşif ve denemeler). Çıktıları eski sonuçların kaynağı, silinmemeli
   (`migrate_experiments` bu çıktıları okur); import'lar yeni adlara güncellendi, çıktılar olduğu gibi.
@@ -126,6 +129,8 @@
   koyu ton oranı; train normları (sınıf x görev); soluk renk kalite bayrağı; JSON + metin rapor.
 - Rapor betimleyicidir, tanı dili içermez. Bütün çizimleri aynı yönde etkileyen maske hataları kabul (normlar aynı
   maskeyle); bazı çizimleri etkileyenler raporda kalite bayrağıyla görünür olmalı.
+- Sürüm 2 (2026-10-19): `docs/olcumler.md` tablosundaki bütün ölçümler JSON'da ve normlarda; metin rapor beş ölçüm.
+  Renklilik ve kenar yoğunluğu sayfaya göre tanımlı, dolulukla güçlü ilişkili (Spearman 0,76 / 0,87; belgelendi).
 - Maske ya da ölçüm tanımı değişirse `MEASUREMENT_VERSION` artır, normları yeniden hesapla.
 
 ## Bilinen sonuçlar (2026-10-15)

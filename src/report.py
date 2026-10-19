@@ -5,6 +5,8 @@ Rapor betimleyicidir: çizimi ölçer ve aynı sınıf düzeyinde, aynı görevi
 
 Kullanım: python -m src.report <görüntü yolu> [--grade 3 --task mutlu] [--out <klasör>]
 KIDO dosya adlarında sınıf ve görev addan okunur. Çıktı: {out}/<ad>.json ve <ad>.txt; metin ekrana da basılır.
+JSON bütün ölçümleri içerir; metin rapor sadece TEXT_MEASURES'ı (bu sırayla) gösterir.
+Karşılaştırma grubu MIN_GROUP'tan küçükse ⚠ verilmez, yerine "karşılaştırma grubu küçük" notu düşer.
 """
 import argparse
 import json
@@ -14,12 +16,21 @@ import sys
 from .config import PATHS
 from .data import grade_from_filename, task_from_filename
 from .measurements.mask import FAINT_FLAG
-from .measurements.metrics import MEASURES, MEASUREMENT_VERSION, measure
+from .measurements.metrics import INTEGER_MEASURES, MEASURE_INFO, MEASUREMENT_VERSION, measure
 from .measurements.norms import NORM_SPLIT, load_norms, norm_group, percentile, tail_shares
 
 TASK_NAMES = {"Happiness": "mutlu", "Sadness": "üzgün"}
 TASK_ARGS = {"mutlu": "Happiness", "uzgun": "Sadness"}
 LOW, HIGH = 5, 95  # akranların %5'inden azı bu kadar düşük / yüksekse ⚠
+MIN_GROUP = 100  # bundan küçük karşılaştırma grubunda %5'lik kuyruk birkaç çizime dayanır: ⚠ verilmez
+# Metin raporda görünen ölçümler ve sırası (JSON'da hepsi var); ad farklıysa ikinci eleman
+TEXT_MEASURES = {
+    "doluluk_orani": None,
+    "renk_sayisi": None,
+    "renklilik": "Renklilik",
+    "koyu_ton_orani": None,
+    "kenar_yogunlugu": "Detay (kenar yoğunluğu)",
+}
 FAINT_MESSAGE = "soluk renk kullanımı: ölçümler eksik olabilir"
 NOTE = "Bu rapor çizimi betimler ve akranlarıyla karşılaştırır; tanı ya da yorum içermez. Yorum uzmana aittir."
 
@@ -42,13 +53,14 @@ def build_report(path, grade=None, emotion=None, norms=None):
     if group.empty:
         raise ValueError(f"Norm grubu boş: {grade}. sınıf, {emotion}")
     values = measure(path)
+    small = len(group) < MIN_GROUP
     measures = []
-    for key, label in MEASURES.items():
+    for key, (kind, label) in MEASURE_INFO.items():
         p = percentile(group[key], values[key])
-        value = values[key] if values[key] is None or key == "renk_sayisi" else round(values[key], 4)
-        measures.append({"kimlik": key, "ad": label, "deger": value,
+        value = values[key] if values[key] is None or key in INTEGER_MEASURES else round(values[key], 4)
+        measures.append({"kimlik": key, "grup": kind, "ad": label, "deger": value,
                          "yuzdelik": None if p is None else round(p, 1),
-                         "aralik_disi": outside(group[key], values[key])})
+                         "aralik_disi": None if small else outside(group[key], values[key])})
     quality = [{"kimlik": "soluk_renk", "deger": round(values["soluk_renk_orani"], 5), "esik": FAINT_FLAG,
                 "bayrak": bool(values["soluk_renk_bayragi"]),
                 "mesaj": FAINT_MESSAGE if values["soluk_renk_bayragi"] else None}]
@@ -57,7 +69,7 @@ def build_report(path, grade=None, emotion=None, norms=None):
         "surum": MEASUREMENT_VERSION,
         "kaynak": {"dosya": name},
         "karsilastirma_grubu": {"sinif": int(grade), "gorev": TASK_NAMES[emotion], "n": int(len(group)),
-                                "kaynak": f"KIDO {NORM_SPLIT}"},
+                                "kaynak": f"KIDO {NORM_SPLIT}", "kucuk": small},
         "normda_mi": bool((group.dosya == name).any()),
         "olcumler": measures,
         "kalite": quality,
@@ -68,7 +80,9 @@ def build_report(path, grade=None, emotion=None, norms=None):
 def _number(x, key):
     if x is None:
         return "—"
-    return str(x) if key == "renk_sayisi" else f"{x:.3f}".replace(".", ",")
+    if key in INTEGER_MEASURES:
+        return str(x)
+    return (f"{x:.1f}" if key == "renklilik" else f"{x:.3f}").replace(".", ",")
 
 
 def format_text(report):
@@ -76,8 +90,10 @@ def format_text(report):
     lines = [f"Çizim ölçümleri: {report['kaynak']['dosya']}",
              f"Karşılaştırma grubu: {g['sinif']}. sınıf, \"{g['gorev']}\" görevi ({g['kaynak']}, {g['n']} çizim)",
              ""]
-    width = max(len(m["ad"]) for m in report["olcumler"])
-    for m in report["olcumler"]:
+    by_key = {m["kimlik"]: m for m in report["olcumler"]}
+    shown = [{**by_key[k], "ad": label or by_key[k]["ad"]} for k, label in TEXT_MEASURES.items()]
+    width = max(len(m["ad"]) for m in shown)
+    for m in shown:
         value = _number(m["deger"], m["kimlik"])
         p = m["yuzdelik"]
         if p is None:
@@ -91,7 +107,9 @@ def format_text(report):
         mark = "  ⚠" if m["aralik_disi"] else ""
         lines.append(f"  {m['ad']:<{width}}  {value:>6}   {where}{mark}")
     notes = []
-    if any(m["aralik_disi"] for m in report["olcumler"]):
+    if g["kucuk"]:
+        notes.append(f"Not: karşılaştırma grubu küçük (n={g['n']}); aralık dışı işareti verilmedi.")
+    elif any(m["aralik_disi"] for m in shown):
         notes.append(f"⚠ Karşılaştırma grubunun %{LOW}'inden azı bu kadar düşük ya da yüksek bir değere sahip "
                      f"(%{LOW}–{HIGH} aralığının dışında).")
     notes += [f"Kalite: {q['mesaj']}." for q in report["kalite"] if q["bayrak"]]

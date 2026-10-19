@@ -22,28 +22,69 @@
 | | Ortalama çizgi kalınlığı | Distance transform ile iskelet boyunca kalınlık | Kalem baskısı/araç tipi |
 | | Bağlı bileşen sayısı | Maskedeki ayrı parçalar (çok küçükler hariç) | Ayrı öğe sayısı |
 
-## Uygulanan ölçümler (ilk dilim, ölçüm sürümü 1)
+## Uygulanan ölçümler (ölçüm sürümü 2)
 
+Tablodaki bütün ölçümler uygulandı (sürüm 1: ilk dilim, doluluk, renk sayısı, koyu ton; sürüm 2: geri kalanlar).
 Kod: `src/measurements/` (`mask.py`, `metrics.py`, `norms.py`), rapor `src/report.py`.
 Görüntüler 512×362; bütün ölçümler kenarlardan 4 piksel kırpılmış sayfa (504×354) üzerinde.
+Çizim yokken (boş maske) konum, doygunluk, koyu ton, boyama ve kalınlık tanımsızdır (`null`).
 
 - **Çizim maskesi:** bir piksel çizime aittir, eğer V < 230 (kurşun kalem, siyah, koyu boya) ya da S > 30 (renkli)
   ise. Histerezis: V < 240 ya da S > 20 olan soluk pikseller, bu kesin eşikleri geçen bir parçaya bağlıysa katılır.
   8 pikselden küçük parçalar ve piksellerinin %90'ı kenara 10 pikselden yakın parçalar (tarama izleri) atılır.
   Eşiklerin ölçüldüğü veriler `mask.py` başında. Maske 24 çizimlik kontrol sayfasıyla onaylandı (2026-10-19;
   `python -m src.measurements.mask_check`, Drive `maske_kontrol/`).
-- **Doluluk oranı:** maskedeki piksellerin sayfaya oranı.
-- **Farklı renk sayısı:** maskedeki doygun pikseller (S > 60, V > 60) 12 ton bölmesine (30°, kırmızı 0° çevresinde
-  ortalı) ayrılır; doygun piksellerin en az %3'ünü ve en az 50 pikseli içeren bölmeler sayılır. Siyah, gri ve beyaz
-  sayılmaz; kahverengi turuncu/kırmızı bölmesine düşer. Karakalem çizim 0 verir.
-- **Koyu ton oranı:** maskedeki piksellerden V < 80 olanların oranı. Siyah kalem/boya sayılır, kurşun kalem grisi
-  (V ≈ 130–200) genelde sayılmaz. Çizim yoksa tanımsız.
+Kompozisyon:
+- **Doluluk oranı** (`doluluk_orani`): maskedeki piksellerin sayfaya oranı.
+- **Ağırlık merkezi** (`agirlik_merkezi_x`, `agirlik_merkezi_y`): maske piksellerinin ortalama konumu, sayfaya göre
+  0–1 (x soldan sağa, y yukarıdan aşağı; 0,5 orta).
+- **Kapsayan kutu oranı** (`kapsayan_kutu_orani`): maskeyi çevreleyen en küçük eksen hizalı dikdörtgenin sayfaya
+  oranı. Tek bir uzak çizgi kutuyu büyütür; KIDO'da ortanca 0,98 (çoğu çizim sayfaya yayılmış).
+- **Bölge doluluğu** (`doluluk_ust_sol` … `doluluk_alt_sag`): sayfa 3×3 bölgeye bölünür, her bölgenin doluluğu
+  (9 değer, satır satır üst soldan).
+
+Renk:
+- **Farklı renk sayısı** (`renk_sayisi`): maskedeki doygun pikseller (S > 60, V > 60) 12 ton bölmesine (30°, kırmızı
+  0° çevresinde ortalı) ayrılır; doygun piksellerin en az %3'ünü ve en az 50 pikseli içeren bölmeler sayılır. Siyah,
+  gri ve beyaz sayılmaz; kahverengi turuncu/kırmızı bölmesine düşer. Karakalem çizim 0 verir.
+- **Renk entropisi** (`renk_entropisi`): renk sayısına giren bölmelerin piksel dağılımının entropisi (bit). Tek renk
+  ya da renksiz 0; k renk eşit kullanılmışsa log2(k), biri baskınsa daha düşük.
+- **Ortalama doygunluk** (`ortalama_doygunluk`): maske piksellerinin ortalama S'si, 0–1. Karakalem ≈ 0.
+- **Koyu ton oranı** (`koyu_ton_orani`): maskedeki piksellerden V < 80 olanların oranı. Siyah kalem/boya sayılır,
+  kurşun kalem grisi (V ≈ 130–200) genelde sayılmaz.
+- **Sıcak ton payı** (`sicak_ton_payi`): tablodaki "sıcak/soğuk oranı" pay olarak: sıcak / (sıcak + soğuk) doygun
+  piksel, 0–1 (soğuk ton hiç yokken oran sonsuz olurdu). Sıcak: kırmızı, turuncu, sarı (345°–75°); soğuk: yeşil,
+  camgöbeği, mavi (105°–255°); sarı-yeşil, mor ve pembe-eflatun ikisine de girmez. İkisi toplam 50 pikselden azsa
+  tanımsız (karakalem; train'de %1,4).
+- **Renklilik** (`renklilik`): Hasler ve Süsstrunk (2003) ölçütü, bütün sayfa üzerinde: rg = R − G,
+  yb = (R + G)/2 − B; σ_rgyb + 0,3 μ_rgyb. Beyaz ya da gri sayfa 0. Yayımlanan tanım gibi bütün görüntüde
+  hesaplandığı için hem rengin canlılığını hem renkli alanın büyüklüğünü yansıtır (bkz. sınırlama 9).
+- **Boyama oranı** (`boyama_orani`): maskeden 7 pikselden ince çizgiler morfolojik açmayla atılır, kalan kalın
+  bölgeler "boyanmış alan" sayılır; oran = boyanmış alan / konturların kapladığı alan (maske + kapalı kontur
+  içleri). Sadece kontur ≈ 0, içi boyanmış şekiller ≈ 1. Alan ağırlıklı: büyük bir boyalı zemin bandı oranı yükseltir.
+
+Çizgi ve yapı:
+- **Kenar yoğunluğu** (`kenar_yogunlugu`): gri tonlu sayfada Canny kenar dedektörü (sigma 1); maskenin 2 piksel
+  çevresi dışındaki kenarlar (kağıt dokusu, tarama izleri) sayılmaz; kenar piksellerinin sayfaya oranı. Metin
+  raporda "Detay (kenar yoğunluğu)" olarak.
+- **Toplam çizgi uzunluğu** (`cizgi_uzunlugu`): maskenin iskeleti (skimage `skeletonize`), piksel sayısı.
+- **Ortalama çizgi kalınlığı** (`cizgi_kalinligi`): iskelet boyunca 2d − 1 (d: maskede kenara uzaklık, distance
+  transform), piksel. Boyanmış alanlarda iskelet alanın ortasından geçer; değer alanın genişliğini ölçer.
+- **Bağlı bileşen sayısı** (`bilesen_sayisi`): maskedeki 8-komşulukla bağlı parçalar, 30 pikselden küçükler hariç.
 
 ## Normlar ve rapor
 
 - Normlar sadece **train** bölümünden (7842 çizim): `python -m src.measurements.norms` → Drive
   `normlar/olcum_normlari.csv` (her train çizimi için bir satır ve ölçüm sürümü). Val ve test norma girmez.
-  Grup büyüklükleri: sınıf × görev başına 258 (1. sınıf) – 696 (3. sınıf).
+  Grup büyüklükleri (her sınıfta mutlu ve üzgün eşit, her öğrencinin iki çizimi):
+
+  | Sınıf | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+  |---|---|---|---|---|---|---|---|---|
+  | Mutlu / üzgün (her biri) | 258 | 324 | 696 | 683 | 658 | 544 | 456 | 302 |
+
+- **Küçük grup:** karşılaştırma grubu 100 çizimden azsa (`report.MIN_GROUP`) ⚠ verilmez (%5'lik kuyruk 5'ten az
+  çizime dayanırdı); yüzdelikler gösterilir, raporda "karşılaştırma grubu küçük (n=…)" notu düşer. KIDO normlarında
+  böyle grup yok; kural başka normlar (örn. ileride başka veri) için.
 - Sınıf düzeyi dosya adından: `101-3B-560-F-H.jpg` → 3 (harf şube); görev son harften (H/S).
 - **Yüzdelik:** orta sıra (eşit değerlerin yarısı altta sayılır).
 - **⚠ (aralık dışı):** akranların %5'inden azı bu kadar düşük (ya da yüksek) bir değere sahipse. Orta sıra
@@ -52,6 +93,8 @@ Görüntüler 512×362; bütün ölçümler kenarlardan 4 piksel kırpılmış s
 - Ölçüm ya da maske tanımı değişirse `metrics.MEASUREMENT_VERSION` artırılır; eski normlar yüklenirken hata verir.
 - Rapor: `python -m src.report <görüntü yolu> [--grade N --task mutlu|uzgun]` → JSON + metin
   (Drive `raporlar/`). JSON modülden bağımsız: `modul`, `karsilastirma_grubu`, `olcumler`, `kalite`, `not`.
+  JSON bütün ölçümleri (tablo sırasıyla, `grup` alanıyla) içerir; metin rapor sadece beşini, bu sırayla gösterir:
+  doluluk oranı, farklı renk sayısı, renklilik, koyu ton oranı, detay (kenar yoğunluğu).
   Rapor train'deki bir çizim içinse "çizim karşılaştırma grubunun içinde" notu düşer.
 
 ## Maske sınırlamaları
@@ -80,3 +123,14 @@ bazı çizimleri etkileyip bazılarını etkilemeyen hatalar bozar. Bunlar rapor
    Düzeltilmedi.
 6. Bir köşeye ya da iki kenara değen büyük (sayfanın ≥ %1'i) parça 7708 çizimde (%71) var; bunlar çoğunlukla
    sayfayı boydan boya geçen gökyüzü ve zemin boyamaları, artık değil.
+
+Sürüm 2 ölçümlerinin sınırlamaları:
+
+7. **Boyama: kalın çizgi boyama sayılır** (aynı yönde). 7 pikselden kalın keçeli kalem / pastel çizgiler (JPEG
+   halesiyle birlikte) boyanmış alan sayılır; seyrek tarama (sınırlama 2) boyanmamış sayılır.
+8. **Kenar yoğunluğu doku da ölçer.** Pastel ve kuru boya dolgularının pürüzlü dokusu çok kenar üretir; değer çizilen
+   ayrıntı ile boyama dokusunu birlikte ölçer.
+9. **Renklilik ve kenar yoğunluğu dolulukla güçlü ilişkili** (train, Spearman): kenar yoğunluğu 0,87, renklilik 0,76;
+   ikisi de sayfaya göre tanımlı, çok çizilen sayfada büyür. Çizim piksellerine göre tanımlansalar ilişki düşer
+   (600 çizimlik örnekte: çizim pikseli başına kenar −0,46, çizim piksellerinde renklilik 0,29). Tablodaki tanımlar
+   korundu; metin raporda bu üç ölçüm birbirinden bağımsız bilgi gibi okunmamalı.

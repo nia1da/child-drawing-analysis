@@ -8,7 +8,8 @@ import pandas as pd
 from PIL import Image
 
 from src.measurements import mask as M
-from src.measurements.metrics import MEASUREMENT_VERSION, color_count, dark_tone_ratio, measure_image
+from src.measurements import metrics as X
+from src.measurements.metrics import MEASURES, MEASUREMENT_VERSION, color_count, dark_tone_ratio, measure_image
 from src.measurements.norms import percentile, tail_shares
 
 W, H = 512, 362  # KIDO görüntü boyutu
@@ -118,6 +119,99 @@ class MetricsTest(unittest.TestCase):
         self.assertIsNone(measure_image(cropped(page()))["koyu_ton_orani"])
 
 
+def measured(arr):
+    return measure_image(cropped(arr))
+
+
+class CompositionTest(unittest.TestCase):
+    def test_center_of_mass_and_box(self):
+        arr = page()
+        arr[54:104, 104:204] = 0  # kırpılmış sayfada satır 50-99, sütun 100-199
+        v = measured(arr)
+        self.assertAlmostEqual(v["agirlik_merkezi_x"], 150 / (W - 2 * M.CROP), places=3)
+        self.assertAlmostEqual(v["agirlik_merkezi_y"], 75 / (H - 2 * M.CROP), places=3)
+        self.assertAlmostEqual(v["kapsayan_kutu_orani"], 100 * 50 / ((W - 2 * M.CROP) * (H - 2 * M.CROP)), places=4)
+
+    def test_empty_page(self):
+        v = measured(page())
+        self.assertIsNone(v["agirlik_merkezi_x"])
+        self.assertEqual((v["kapsayan_kutu_orani"], v["bilesen_sayisi"], v["cizgi_uzunlugu"]), (0, 0, 0))
+
+    def test_region_fill_top_left_only(self):
+        mask = np.zeros((90, 120), bool)
+        mask[:30, :40] = True
+        self.assertEqual(X.region_fill(mask), [1.0] + [0.0] * 8)
+        self.assertEqual(len(X.REGIONS), X.GRID ** 2)
+
+
+class ColorTest(unittest.TestCase):
+    def test_entropy_and_warm_share(self):
+        arr = page()
+        arr[50:150, 50:150] = (220, 30, 30)  # kırmızı (sıcak)
+        arr[50:150, 250:350] = (30, 60, 220)  # mavi (soğuk), aynı alan
+        v = measured(arr)
+        self.assertAlmostEqual(v["renk_entropisi"], 1.0, places=2)  # iki eşit renk: 1 bit
+        self.assertAlmostEqual(v["sicak_ton_payi"], 0.5, delta=0.02)
+        self.assertGreater(v["ortalama_doygunluk"], 0.8)
+
+    def test_single_color_and_pencil(self):
+        red = page()
+        red[50:150, 50:150] = (220, 30, 30)
+        self.assertEqual(measured(red)["renk_entropisi"], 0.0)
+        self.assertEqual(measured(red)["sicak_ton_payi"], 1.0)
+        pencil = page()
+        pencil[100:110, 50:450] = 150
+        v = measured(pencil)
+        self.assertIsNone(v["sicak_ton_payi"])  # sıcak da soğuk da yok
+        self.assertLess(v["ortalama_doygunluk"], 0.05)
+
+    def test_colorfulness(self):
+        self.assertAlmostEqual(X.colorfulness(cropped(page())), 0.0)
+        self.assertAlmostEqual(X.colorfulness(cropped(page((128, 128, 128)))), 0.0)
+        small, large = page(), page()
+        small[100:150, 100:150] = (220, 30, 30)
+        large[50:300, 50:450] = (220, 30, 30)
+        self.assertGreater(X.colorfulness(cropped(large)), X.colorfulness(cropped(small)))
+        self.assertGreater(X.colorfulness(cropped(small)), 10)
+
+    def test_painted_ratio_outline_vs_filled(self):
+        outline, filled = page(), page()
+        outline[100:250, 100:350] = (30, 60, 220)
+        outline[103:247, 103:347] = 255  # 3 piksellik kontur, içi boş
+        filled[100:250, 100:350] = (30, 60, 220)
+        self.assertLess(measured(outline)["boyama_orani"], 0.05)
+        self.assertGreater(measured(filled)["boyama_orani"], 0.95)
+
+
+class StructureTest(unittest.TestCase):
+    def test_line_length_and_thickness(self):
+        arr = page()
+        arr[180:183, 50:450] = 0  # 400 piksel uzunluğunda, 3 piksel kalınlığında çizgi
+        v = measured(arr)
+        self.assertAlmostEqual(v["cizgi_uzunlugu"], 400, delta=10)
+        self.assertAlmostEqual(v["cizgi_kalinligi"], 3, delta=0.5)
+
+    def test_component_count_ignores_small_parts(self):
+        arr = page()
+        for x in (50, 200, 350):
+            arr[100:130, x:x + 30] = 0
+        arr[300:304, 100:104] = 0  # 16 piksel: maskede kalır ama MIN_PART'tan küçük
+        self.assertEqual(measured(arr)["bilesen_sayisi"], 3)
+
+    def test_edge_density(self):
+        self.assertEqual(measured(page())["kenar_yogunlugu"], 0.0)
+        arr = page()
+        arr[100:200, 100:300] = 0
+        perimeter = 2 * (100 + 200) / ((W - 2 * M.CROP) * (H - 2 * M.CROP))
+        # Canny keskin geçişi yer yer 2 piksel işaretler: çevre ile iki katı arasında
+        self.assertTrue(perimeter <= measured(arr)["kenar_yogunlugu"] <= 2 * perimeter)
+
+    def test_all_measures_present_in_order(self):
+        arr = page()
+        arr[100:200, 100:300] = (220, 30, 30)
+        self.assertEqual([k for k in measured(arr) if k in MEASURES], list(MEASURES))
+
+
 class NormsTest(unittest.TestCase):
     def test_percentile_mid_rank(self):
         self.assertEqual(percentile([1, 2, 3, 4], 2.5), 50.0)
@@ -130,29 +224,64 @@ class NormsTest(unittest.TestCase):
         self.assertEqual((low, high), (10.0, 100.0))
 
 
+def synthetic_norms(n, seed=0):
+    rng = np.random.default_rng(seed)
+    norms = pd.DataFrame({k: rng.uniform(0, 1, n) for k in MEASURES})
+    norms["doluluk_orani"] = rng.uniform(0.2, 0.4, n)
+    norms["renk_sayisi"] = rng.integers(3, 7, n)
+    norms["koyu_ton_orani"] = rng.uniform(0.0, 0.1, n)
+    norms["renklilik"] = rng.uniform(20, 60, n)
+    return norms.assign(dosya=[f"x-{i}.jpg" for i in range(n)], sinif=3, duygu="Happiness",
+                        surum=MEASUREMENT_VERSION)
+
+
 class ReportTest(unittest.TestCase):
-    def test_report_structure_and_flags(self):
-        from src.report import build_report, format_text, save
-        rng = np.random.default_rng(0)
-        n = 200
-        norms = pd.DataFrame({"dosya": [f"x-{i}.jpg" for i in range(n)], "sinif": 3, "duygu": "Happiness",
-                              "doluluk_orani": rng.uniform(0.2, 0.4, n), "renk_sayisi": rng.integers(3, 7, n),
-                              "koyu_ton_orani": rng.uniform(0.0, 0.1, n), "surum": MEASUREMENT_VERSION})
+    def report(self, norms):
+        from src.report import build_report
         arr = page()
-        arr[:, : W // 2] = 0  # doluluk 0.5 ve tamamı koyu: ikisi de grubun üstünde, renk 0: altında
+        arr[:, : W // 2] = 0  # doluluk 0.5 ve tamamı koyu: grubun üstünde; renk sayısı ve renklilik 0: altında
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, "101-3B-1-F-H.jpg")
             Image.fromarray(arr).save(path, quality=95)
-            r = build_report(path, norms=norms)
-            flags = {m["kimlik"]: m["aralik_disi"] for m in r["olcumler"]}
-            self.assertEqual(flags, {"doluluk_orani": "ust", "renk_sayisi": "alt", "koyu_ton_orani": "ust"})
-            self.assertEqual(r["karsilastirma_grubu"], {"sinif": 3, "gorev": "mutlu", "n": n, "kaynak": "KIDO train"})
-            text = format_text(r)
-            self.assertIn("⚠", text)
-            for word in ["tanı koy", "risk", "bozukluk", "depresyon"]:
-                self.assertNotIn(word, text.lower())
+            return build_report(path, norms=norms)
+
+    def test_report_structure_and_flags(self):
+        from src.report import format_text, save
+        n = 200
+        r = self.report(synthetic_norms(n))
+        self.assertEqual([m["kimlik"] for m in r["olcumler"]], list(MEASURES))  # JSON'da hepsi
+        flags = {m["kimlik"]: m["aralik_disi"] for m in r["olcumler"]}
+        self.assertEqual({k: flags[k] for k in ["doluluk_orani", "renk_sayisi", "koyu_ton_orani", "renklilik"]},
+                         {"doluluk_orani": "ust", "renk_sayisi": "alt", "koyu_ton_orani": "ust", "renklilik": "alt"})
+        self.assertEqual(r["karsilastirma_grubu"],
+                         {"sinif": 3, "gorev": "mutlu", "n": n, "kaynak": "KIDO train", "kucuk": False})
+        text = format_text(r)
+        self.assertIn("⚠", text)
+        for word in ["tanı koy", "risk", "bozukluk", "depresyon"]:
+            self.assertNotIn(word, text.lower())
+        with tempfile.TemporaryDirectory() as d:
             json_path, txt_path = save(r, os.path.join(d, "out"))
             self.assertTrue(os.path.exists(json_path) and os.path.exists(txt_path))
+
+    def test_text_shows_five_measures_in_order(self):
+        from src.report import format_text
+        text = format_text(self.report(synthetic_norms(200)))
+        names = ["Doluluk oranı", "Farklı renk sayısı", "Renklilik", "Koyu ton oranı", "Detay (kenar yoğunluğu)"]
+        positions = [text.find(f"  {name} ") for name in names]
+        self.assertTrue(all(p >= 0 for p in positions), positions)
+        self.assertEqual(positions, sorted(positions))
+        for hidden in ["Ağırlık merkezi", "Boyama oranı", "Bağlı bileşen", "Renk entropisi", "Bölge doluluğu"]:
+            self.assertNotIn(hidden, text)
+
+    def test_small_group_note_instead_of_flags(self):
+        from src.report import MIN_GROUP, format_text
+        r = self.report(synthetic_norms(MIN_GROUP - 1))
+        self.assertTrue(r["karsilastirma_grubu"]["kucuk"])
+        self.assertTrue(all(m["aralik_disi"] is None for m in r["olcumler"]))
+        self.assertTrue(all(m["yuzdelik"] is not None for m in r["olcumler"] if m["deger"] is not None))
+        text = format_text(r)
+        self.assertNotIn("⚠", text)
+        self.assertIn(f"karşılaştırma grubu küçük (n={MIN_GROUP - 1})", text)
 
 
 if __name__ == "__main__":
