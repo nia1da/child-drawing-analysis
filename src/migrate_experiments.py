@@ -1,9 +1,13 @@
-"""deneyler.csv'yi güncel sütun düzenine (training.COLUMNS) taşır. İki durum:
+"""deneyler.csv'nin sütun düzeni, eski düzenlerden taşıma ve satır ekleme.
+
+Sonuç satırı her zaman append_record ile yazılır: dosya eski düzendeyse önce yedeklenip taşınır,
+sonra satır eklenir; tanınmayan düzende hiçbir şey yazılmadan hata verilir. Böylece hangi ortamdan
+(Colab ya da yerel) yazılırsa yazılsın dosya bozulmaz. Tanınan eski düzenler:
 
 1. İlk düzen (deney, en_iyi_val_f1, epoch, dakika): parametreler deney adından çıkarılır.
    Orijinal deneyler_eski.csv olarak saklanır.
-2. Sonradan eklenen sütunları eksik dosya (örn. augmentation): eksik sütunlar
-   training.ADDED_COLUMNS'daki değerle doldurulur. Orijinal deneyler_yedek_<tarih>.csv olarak saklanır.
+2. Sonradan eklenen sütunları eksik dosya (örn. augmentation, batch): eksik sütunlar
+   ADDED_COLUMNS'daki değerle doldurulur. Orijinal deneyler_yedek_<tarih>.csv olarak saklanır.
 
 İlk düzen için ayrıntılar:
 
@@ -11,7 +15,7 @@ Parametreler eski deney adından (örn. resnet50_320px_lr0.0001_ls0.1_s42) çık
 Ad epoch sayısını içermediği için toplam_epoch, notebook'taki "Sonuç:" çıktılarıyla
 eşleşen satırlar için oradan alınır; eşleşmeyenlerde boş kalır. tarih bilinmediği için boştur.
 
-Kullanım: python -m src.migrate_experiments
+Elle taşıma (yazmadan): python -m src.migrate_experiments
 """
 import ast
 import json
@@ -24,12 +28,17 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 
 from .config import PATHS, REPO
-from .training import ADDED_COLUMNS, COLUMNS
 
+# deneyler.csv sütunları (adları Drive'daki kayıtlarla aynı kalmalı).
+# Yeni bir hiperparametre değiştirilmeye başlanırsa buraya sütun olarak eklenmeli
+COLUMNS = ["tarih", "deney", "model", "boyut", "lr", "smoothing", "seed", "augmentation", "batch", "accum_steps",
+           "toplam_epoch", "en_iyi_epoch", "en_iyi_val_f1", "dakika", "not"]
+# Sonradan eklenen sütunlar ve eklenmeden önceki deneylerdeki değerleri
+ADDED_COLUMNS = {"augmentation": "temel", "batch": 32, "accum_steps": 1}
 OLD_NAME = re.compile(r"^(?P<model>.+)_(?P<boyut>\d+)px_lr(?P<lr>[^_]+)_ls(?P<smoothing>[^_]+)_s(?P<seed>\d+)$")
 NOTEBOOK = f"{REPO}/notebooks/grad_proj.ipynb"
 FIRST_LAYOUT = ["deney", "en_iyi_val_f1", "epoch", "dakika"]
-INT_COLUMNS = ["boyut", "seed", "toplam_epoch", "en_iyi_epoch"]
+INT_COLUMNS = ["boyut", "seed", "batch", "accum_steps", "toplam_epoch", "en_iyi_epoch"]
 
 
 def notebook_results(path=NOTEBOOK):
@@ -66,21 +75,35 @@ def _from_first_layout(old):
     return pd.DataFrame(rows, columns=COLUMNS)
 
 
-def migrate(output_dir=PATHS["output"]):
-    path = f"{output_dir}/deneyler.csv"
-    old = pd.read_csv(path)
-    columns = old.columns.tolist()
-    missing = set(COLUMNS) - set(columns)
+def layout(columns):
+    """Başlığın düzeni: "current", "first" ya da "missing" (sonradan eklenen sütunlar eksik). Tanınmazsa hata."""
     if columns == COLUMNS:
-        print("deneyler.csv zaten güncel düzende, bir şey yapılmadı.")
-        return
+        return "current"
     if columns == FIRST_LAYOUT:
-        backup, new = f"{output_dir}/deneyler_eski.csv", _from_first_layout(old)
-    elif set(columns) < set(COLUMNS) and missing <= set(ADDED_COLUMNS):
-        stamp = datetime.now(ZoneInfo("Europe/Istanbul")).strftime("%Y%m%d-%H%M")
-        backup, new = f"{output_dir}/deneyler_yedek_{stamp}.csv", old.reindex(columns=COLUMNS)
+        return "first"
+    if set(columns) < set(COLUMNS) and set(COLUMNS) - set(columns) <= set(ADDED_COLUMNS):
+        return "missing"
+    raise ValueError(f"deneyler.csv tanınmayan sütun düzeninde: {columns}. Beklenen: {COLUMNS}")
+
+
+def check_results_file(path):
+    # Eğitimden önce, hiçbir şey yazmadan: dosya güncel ya da taşınabilir düzende mi (değilse hata)
+    if os.path.exists(path):
+        layout(pd.read_csv(path, nrows=0).columns.tolist())
+
+
+def migrate_file(path):
+    """Dosya eski düzendeyse yedekleyip güncel düzene taşır. Güncelse None, taşındıysa (yedek yolu, yeni tablo)."""
+    old = pd.read_csv(path)
+    kind = layout(old.columns.tolist())
+    if kind == "current":
+        return None
+    folder = os.path.dirname(path)
+    if kind == "first":
+        backup, new = f"{folder}/deneyler_eski.csv", _from_first_layout(old)
     else:
-        raise ValueError(f"Tanınmayan sütun düzeni: {columns}")
+        stamp = datetime.now(ZoneInfo("Europe/Istanbul")).strftime("%Y%m%d-%H%M")
+        backup, new = f"{folder}/deneyler_yedek_{stamp}.csv", old.reindex(columns=COLUMNS)
     if os.path.exists(backup):
         raise FileExistsError(f"{backup} zaten var; üzerine yazmamak için durdum.")
 
@@ -90,8 +113,26 @@ def migrate(output_dir=PATHS["output"]):
 
     shutil.copy2(path, backup)
     new.to_csv(path, index=False)
-    print(f"{len(new)} satır güncel düzene taşındı; orijinal: {backup}")
-    print(new.to_string(index=False))
+    print(f"deneyler.csv: {len(new)} satır güncel düzene taşındı; orijinal: {backup}")
+    return backup, new
+
+
+def append_record(path, record):
+    """Sonuç satırını ekler; dosya eski düzendeyse önce taşır. Tanınmayan düzende hiçbir şey yazmadan hata verir."""
+    if set(record) != set(COLUMNS):
+        raise ValueError(f"Kayıt anahtarları sütunlarla uyuşmuyor: {sorted(set(record) ^ set(COLUMNS))}")
+    exists = os.path.exists(path)
+    if exists:
+        migrate_file(path)
+    pd.DataFrame([record], columns=COLUMNS).to_csv(path, mode="a", header=not exists, index=False)
+
+
+def migrate(output_dir=PATHS["output"]):
+    result = migrate_file(f"{output_dir}/deneyler.csv")
+    if result is None:
+        print("deneyler.csv zaten güncel düzende, bir şey yapılmadı.")
+    else:
+        print(result[1].to_string(index=False))
 
 
 if __name__ == "__main__":

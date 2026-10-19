@@ -29,6 +29,12 @@
   Ortam `COLAB_RELEASE_TAG` ile algılanır, `CIZIM_ENV=local|colab` ile zorlanabilir.
   Yerelde: `data/kido/Dataset/Images`, `data/kido_metadata.csv`, `data/ciktilar/`.
 - Cihaz otomatik (`training.select_device`): CUDA > MPS > CPU. float16 AMP sadece CUDA'da.
+- Eğitim varsayılanları ortama göre (`config.TRAINING_DEFAULTS`): Colab batch 32, accum 1; yerel batch 16, accum 2,
+  2 worker. RTX 4060'ta 448px batch 32 belleğe sığmıyor (ölçüm 2026-10-19: batch 16, convnext_tiny 448px,
+  1 epoch 2,7 dk, max_reserved 4,96 GB; 4 ve 6 worker daha yavaş). NVIDIA ayarlarında sysmem fallback kapalı:
+  bellek yetmezse yavaşlamak yerine OOM verir.
+- Gradyan biriktirme (`training.train_epoch`) etkin batch'i korur, ama BatchNorm'lu modellerde (resnet50, efficientnet_b0)
+  16 x 2, 32 x 1'e eşdeğer değildir (BN istatistikleri micro-batch'ten); convnext_tiny LayerNorm kullanır, eşdeğer.
 - macOS ve Windows'ta DataLoader worker'ları spawn ile açılır: dönüşümlerde lambda kullanma (pickle edilemez), modül düzeyi fonksiyon + `partial` kullan.
   Aynı sebeple DataLoader kullanan betikler stdin'den değil dosyadan, `if __name__ == "__main__":` altında çalıştırılmalı.
 - Satır sonları `.gitattributes` ile LF (`* text=auto eol=lf`); iki işletim sisteminde aynı kalır.
@@ -59,7 +65,8 @@
   dönüşümler (`build_transforms`: beyaz pad ile kare; `aug`: `temel` = çevirme + döndürme, `renk` = + renk bozma,
   gri tonlama), `build_loaders`.
 - `src/splits.py`: `stratified_split` → `bolum` sütunu (train/val/test).
-- `src/training.py`: `select_device`, `build_model` (resnet50, efficientnet_b0, convnext_tiny), `train`; `python -m src.training` CLI'ı.
+- `src/training.py`: `select_device`, `build_model` (resnet50, efficientnet_b0, convnext_tiny), `train_epoch`
+  (gradyan biriktirme), `train`; `python -m src.training` CLI'ı (`--batch-size`, `--accum-steps`, `--num-workers`).
 - `src/evaluation.py`: `.pt`'yi bir bölümde (varsayılan test) değerlendirir: macro F1, karışıklık matrisi,
   cinsiyet / eğitim / ikisinin kesişimi alt grup F1'leri; tahminleri `{output}/tahminler/{deney}_{bolum}.csv`'ye yazar.
   `python -m src.evaluation --experiment <ad> [--split val] [--quick]`.
@@ -69,8 +76,12 @@
 - `src/analysis.py`: kayıtlı tahminler üzerinde güven bandı (`save_threshold`/`load_threshold`/`confidence_band`;
   eşik val'de, `{deney}_esik.json`), `error_direction` (mutlu→üzgün / üzgün→mutlu, alt grup) ve `compare`
   (seed ortalamalı ayar kıyası).
-- `src/migrate_experiments.py`: `deneyler.csv`'yi güncel düzene taşır (ilk 4 sütunlu düzen ya da eksik yeni sütunlar).
-- `tests/`: `unittest` testleri (`test_splits.py`: aynı öğrenci iki bölümde olmamalı).
+- `src/migrate_experiments.py`: `deneyler.csv`'nin sütun düzeni (`COLUMNS`, `ADDED_COLUMNS`), eski düzenlerden taşıma
+  (ilk 4 sütunlu düzen ya da eksik yeni sütunlar) ve satır ekleme (`append_record`).
+- `tests/`: `unittest` testleri (`test_splits.py`: aynı öğrenci iki bölümde olmamalı; `test_accumulation.py`:
+  16 x 2 ile 32 x 1 aynı ağırlık güncellemesini veriyor mu, epoch sonundaki yarım grup dahil; SGD ile, çünkü Adam'ın
+  ilk adımı gradyan ölçeğinden bağımsız ve hatayı gizler; `test_results_file.py`: eski düzen yedeklenip taşınıyor mu,
+  tanınmayan düzende hiçbir şey yazılmıyor mu).
 - `notebooks/colab.ipynb`: güncel Colab notebook'u; repoyu clone/pull eder, sadece `src/` fonksiyonlarını çağırır.
 - `notebooks/grad_proj.ipynb`: arşiv (ilk keşif ve denemeler). Çıktıları eski sonuçların kaynağı, silinmemeli
   (`migrate_experiments` bu çıktıları okur); import'lar yeni adlara güncellendi, çıktılar olduğu gibi.
@@ -105,16 +116,22 @@
 - Git işlemlerini (commit, branch, push) kullanıcı yapar. Claude sadece kodu düzenler,
   değişiklikleri küçük ve anlamlı parçalar halinde tutar ve neyin değiştiğini özetler.
 - Eğitim kodunda değişiklik yapınca Colab'a göndermeden önce `--quick` (`train(..., quick=True)`) ile yerelde test et:
-  bölüm başına her sınıftan 8 görsel, 1 epoch, batch 4. Hızlı mod model kaydetmez ve `deneyler.csv`'ye yazmaz;
+  bölüm başına her sınıftan 8 görsel, 1 epoch, batch 4 (accum ortam varsayılanı). Hızlı mod model kaydetmez ve `deneyler.csv`'ye yazmaz;
   gerçek sonuçlar sadece Colab'daki tam eğitimlerden gelir.
 - Her deneme Drive'daki `deneyler.csv`'ye bir satır ekler. Sütunlar:
-  `tarih, deney, model, boyut, lr, smoothing, seed, augmentation, toplam_epoch, en_iyi_epoch, en_iyi_val_f1, dakika, not`
+  `tarih, deney, model, boyut, lr, smoothing, seed, augmentation, batch, accum_steps, toplam_epoch, en_iyi_epoch, en_iyi_val_f1, dakika, not`
+  (`batch`, `accum_steps` 2026-10-19'da eklendi; önceki deneyler 32 ve 1.)
   - Yeni bir hiperparametre değiştirilmeye başlanırsa (batch size vb.) o da sütun olarak eklenmeli: `COLUMNS`'a ekle,
     önceki deneylerdeki değerini `ADDED_COLUMNS`'a yaz; `migrate_experiments` mevcut dosyayı yedekleyip sütunu doldurur.
     Varsayılan değer deney adına eklenmez (eski adlar değişmesin), farklı değer sona ek olarak gelir (`..._s42_aug-renk`).
+    Etkin batch (batch x accum) 32 değilse `_eb<n>` eki gelir (`..._s42_aug-renk_eb64`). Yerel 16 x 2 ile Colab 32 x 1
+    aynı adı alır; ayrım `batch`/`accum_steps` sütunlarında.
   - Eski satırlar silinmez; şemaya taşınırken bilinmeyen alanlar boş bırakılır, `not` = "eski kayıt".
-  - Sütunlar `training.COLUMNS`'ta. `train()` başlığı farklı bir dosyaya yazmayı eğitimden önce reddeder.
+  - Sütunlar `migrate_experiments.COLUMNS`'ta (`training.COLUMNS` olarak da erişilir). Satır her zaman
+    `append_record` ile yazılır: eski düzendeki dosyayı önce yedekleyip taşır, sonra ekler; ortam fark etmez.
+    Tanınmayan düzende hiçbir şey yazmadan hata verir; `train()` bunu eğitimden önce de kontrol eder.
 - Deney adı (`training.experiment_name`) benzersizdir ve hem `.pt` dosya adı hem `deney` sütunudur:
   `convnext_tiny_320_ep12_lr1e-4_ls0.1_s42`. Aynı ad `.pt` olarak ya da `deneyler.csv`'de varsa `train()` eğitimden önce hata verir.
   Eski satırlar eski adları (`..._320px_lr0.0001_ls0.1_s42`) korur; mevcut `.pt` dosyalarının adı değiştirilmez.
-- Eski düzendeki `deneyler.csv` `python -m src.migrate_experiments` ile taşınır (orijinal `deneyler_eski.csv` olarak saklanır).
+- Eski düzendeki `deneyler.csv` ilk yazmada kendiliğinden taşınır; yazmadan taşımak için `python -m src.migrate_experiments`
+  (orijinal `deneyler_eski.csv` ya da `deneyler_yedek_<tarih>.csv` olarak saklanır).

@@ -10,16 +10,13 @@ import torch.nn as nn
 from sklearn.metrics import f1_score
 from torchvision import models
 
-from .config import PATHS
+from .config import DEFAULTS, PATHS
 from .data import AUGMENTATIONS, ROOT, build_loaders, load_metadata
+# deneyler.csv sütun düzeni ve yazma migrate_experiments'te; COLUMNS buradan da erişilebilir kalsın
+from .migrate_experiments import COLUMNS, append_record, check_results_file  # noqa: F401
 
 MODELS = ["resnet50", "efficientnet_b0", "convnext_tiny"]
-# deneyler.csv sütunları (adları Drive'daki kayıtlarla aynı kalmalı).
-# Yeni bir hiperparametre değiştirilmeye başlanırsa buraya sütun olarak eklenmeli
-COLUMNS = ["tarih", "deney", "model", "boyut", "lr", "smoothing", "seed", "augmentation",
-           "toplam_epoch", "en_iyi_epoch", "en_iyi_val_f1", "dakika", "not"]
-# Sonradan eklenen sütunlar ve eklenmeden önceki deneylerdeki değerleri (migrate_experiments kullanır)
-ADDED_COLUMNS = {"augmentation": "temel"}
+DEFAULT_EFFECTIVE_BATCH = 32  # deney adına sadece bundan farklıysa eklenir
 QUICK_SAMPLES = 8  # hızlı modda bölüm başına, her sınıftan görsel sayısı
 
 
@@ -60,10 +57,13 @@ def format_lr(lr):
     return f"{mantissa.rstrip('0').rstrip('.')}e{int(exp)}"
 
 
-def experiment_name(model_name, size, epochs, lr, smoothing, seed, aug="temel"):
+def experiment_name(model_name, size, epochs, lr, smoothing, seed, aug="temel", effective_batch=DEFAULT_EFFECTIVE_BATCH):
     # Örn. convnext_tiny_320_ep12_lr1e-4_ls0.1_s42; .pt dosyası ve deneyler.csv'deki "deney" bu adı kullanır.
-    # aug "temel" değilse sona eklenir (..._s42_aug-renk); böylece önceki deney adları değişmez.
+    # Varsayılan olmayan değerler sona eklenir (..._s42_aug-renk_eb64); böylece önceki deney adları değişmez.
+    # Etkin batch = batch_size x accum_steps: yerel 16x2 ile Colab 32x1 aynı ayar sayılır, ayrım batch/accum_steps sütunlarında.
     suffix = "" if aug == "temel" else f"_aug-{aug}"
+    if effective_batch != DEFAULT_EFFECTIVE_BATCH:
+        suffix += f"_eb{effective_batch}"
     return f"{model_name}_{size}_ep{epochs}_lr{format_lr(lr)}_ls{smoothing:g}_s{seed}{suffix}"
 
 
@@ -77,37 +77,57 @@ def check_unique_experiment(name, output_dir):
         raise FileExistsError(f"{name} zaten deneyler.csv'de kayıtlı.")
 
 
-def check_results_file(path):
-    # Eski düzendeki bir dosyaya yeni satır eklemek CSV'yi bozar; eğitimden önce durdur
-    if os.path.exists(path):
-        header = pd.read_csv(path, nrows=0).columns.tolist()
-        if header != COLUMNS:
-            raise RuntimeError(f"{path} eski sütun düzeninde: {header}. Önce yeni düzene ({COLUMNS}) taşınmalı "
-                               "(python -m src.migrate_experiments).")
+def train_epoch(model, loader, optim, scaler, loss_fn, accum_steps=1, schedule=None, amp=False):
+    """Bir epoch; accum_steps micro-batch'in gradyanı toplanıp tek optimizer adımı atılır.
+
+    Kayıp gruptaki micro-batch sayısına bölünür; epoch sonundaki yarım grup kendi boyuna bölünüp
+    o da adım olarak uygulanır. GradScaler adımı ve zero_grad sadece grup sınırında.
+    Eşit boylu micro-batch'lerde batch_size x accum_steps ile tek büyük batch aynı gradyanı verir
+    (BatchNorm'lu modellerde değil: istatistikler micro-batch üzerinden hesaplanır).
+    Son micro-batch'in kaybını döndürür.
+    """
+    dev = next(model.parameters()).device
+    n = len(loader)
+    optim.zero_grad()
+    for i, (x, y) in enumerate(loader):
+        x, y = x.to(dev), y.to(dev)
+        group_start = i - i % accum_steps
+        group = min(accum_steps, n - group_start)  # epoch sonundaki yarım grupta daha az
+        with torch.autocast("cuda", dtype=torch.float16, enabled=amp):
+            loss = loss_fn(model(x), y)
+        scaler.scale(loss / group).backward()
+        if i - group_start + 1 == group:  # grup sınırı ya da epoch sonu
+            scaler.step(optim); scaler.update(); optim.zero_grad()
+            if schedule is not None:
+                schedule.step()
+    return loss
 
 
 def train(df, model_name, size=224, epochs=8, lr=1e-4, smoothing=0.1, seed=42, root=ROOT,
-          output_dir=PATHS["output"], aug="temel", note="", quick=False):
+          output_dir=PATHS["output"], aug="temel", batch_size=DEFAULTS["batch_size"],
+          accum_steps=DEFAULTS["accum_steps"], num_workers=DEFAULTS["num_workers"], note="", quick=False):
     """Modeli eğitir, en iyi val F1'li ağırlığı kaydeder ve deneyler.csv'ye bir satır ekler.
 
-    quick=True: her sınıftan birkaç görsel, 1 epoch, küçük batch. Kod yolunu yerelde test etmek
+    batch_size, accum_steps, num_workers varsayılanları ortama göre (config.TRAINING_DEFAULTS):
+    Colab 32 x 1, yerel 16 x 2; etkin batch ikisinde de 32.
+    quick=True: her sınıftan birkaç görsel, 1 epoch, batch 4 (accum_steps aynen). Kod yolunu yerelde test etmek
     içindir; model kaydedilmez ve deneyler.csv'ye yazılmaz.
     """
     path = f"{output_dir}/deneyler.csv"
     if quick:
-        df, epochs, batch, num_workers = quick_sample(df, seed=seed), 1, 4, 0
-    name = experiment_name(model_name, size, epochs, lr, smoothing, seed, aug)
+        df, epochs, batch_size, num_workers = quick_sample(df, seed=seed), 1, 4, 0
+    name = experiment_name(model_name, size, epochs, lr, smoothing, seed, aug, batch_size * accum_steps)
     if not quick:
-        check_results_file(path)
+        check_results_file(path)  # tanınmayan düzen eğitimden önce yakalansın; taşıma yazarken (append_record)
         check_unique_experiment(name, output_dir)
         os.makedirs(output_dir, exist_ok=True)
-        batch, num_workers = 32, 2
 
     torch.manual_seed(seed)
-    tr, va = build_loaders(df, size, root, num_workers=num_workers, batch=batch, aug=aug)
+    tr, va = build_loaders(df, size, root, num_workers=num_workers, batch=batch_size, aug=aug)
     model = build_model(model_name)
     optim = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
-    schedule = torch.optim.lr_scheduler.CosineAnnealingLR(optim, T_max=epochs * len(tr))
+    steps_per_epoch = -(-len(tr) // accum_steps)  # yukarı yuvarlama: yarım grup da bir adım
+    schedule = torch.optim.lr_scheduler.CosineAnnealingLR(optim, T_max=epochs * steps_per_epoch)
     loss_fn = nn.CrossEntropyLoss(label_smoothing=smoothing)
     amp = device == "cuda"  # float16 AMP sadece CUDA'da; MPS ve CPU float32 çalışır
     scaler = torch.amp.GradScaler("cuda", enabled=amp)
@@ -115,12 +135,7 @@ def train(df, model_name, size=224, epochs=8, lr=1e-4, smoothing=0.1, seed=42, r
 
     for ep in range(epochs):
         model.train()
-        for x, y in tr:
-            x, y = x.to(device), y.to(device)
-            optim.zero_grad()
-            with torch.autocast("cuda", dtype=torch.float16, enabled=amp):
-                loss = loss_fn(model(x), y)
-            scaler.scale(loss).backward(); scaler.step(optim); scaler.update(); schedule.step()
+        loss = train_epoch(model, tr, optim, scaler, loss_fn, accum_steps, schedule, amp)
 
         model.eval(); preds, targets = [], []
         with torch.no_grad(), torch.autocast("cuda", dtype=torch.float16, enabled=amp):
@@ -137,13 +152,14 @@ def train(df, model_name, size=224, epochs=8, lr=1e-4, smoothing=0.1, seed=42, r
     date = datetime.now(ZoneInfo("Europe/Istanbul")).strftime("%Y-%m-%d %H:%M")
     # Anahtarlar deneyler.csv sütunları
     record = {"tarih": date, "deney": name, "model": model_name, "boyut": size,
-              "lr": lr, "smoothing": smoothing, "seed": seed, "augmentation": aug, "toplam_epoch": epochs,
+              "lr": lr, "smoothing": smoothing, "seed": seed, "augmentation": aug, "batch": batch_size,
+              "accum_steps": accum_steps, "toplam_epoch": epochs,
               "en_iyi_epoch": best_ep, "en_iyi_val_f1": round(best, 4), "dakika": round((time.time() - start) / 60, 1),
               "not": note}
     if quick:
         print(f"[hızlı mod] {device} | {len(tr.dataset)} train / {len(va.dataset)} val görsel | kayıt yazılmadı")
     else:
-        pd.DataFrame([record], columns=COLUMNS).to_csv(path, mode="a", header=not os.path.exists(path), index=False)
+        append_record(path, record)
     print("Sonuç:", record)
     return record
 
@@ -157,8 +173,12 @@ if __name__ == "__main__":
     p.add_argument("--smoothing", type=float, default=0.1)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--aug", choices=AUGMENTATIONS, default="temel")
+    p.add_argument("--batch-size", type=int, default=DEFAULTS["batch_size"])
+    p.add_argument("--accum-steps", type=int, default=DEFAULTS["accum_steps"])
+    p.add_argument("--num-workers", type=int, default=DEFAULTS["num_workers"])
     p.add_argument("--note", default="")
     p.add_argument("--quick", action="store_true", help="birkaç görsel, 1 epoch; model ve sonuç kaydedilmez")
     a = p.parse_args()
     train(load_metadata(), a.model, size=a.size, epochs=a.epochs, lr=a.lr, smoothing=a.smoothing,
-          seed=a.seed, aug=a.aug, note=a.note, quick=a.quick)
+          seed=a.seed, aug=a.aug, batch_size=a.batch_size, accum_steps=a.accum_steps, num_workers=a.num_workers,
+          note=a.note, quick=a.quick)

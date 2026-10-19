@@ -108,7 +108,8 @@ def build_transforms(size=224, aug="temel"):
 
 def build_loaders(df, size=224, root=ROOT, num_workers=2, batch=32, aug="temel"):
     train_tf, eval_tf = build_transforms(size, aug)
-    tr = DataLoader(KidoDataset(df[df.bolum == "train"], train_tf, root), batch_size=batch, shuffle=True,
-                    num_workers=num_workers)
-    va = DataLoader(KidoDataset(df[df.bolum == "val"], eval_tf, root), batch_size=batch * 2, num_workers=num_workers)
+    # persistent_workers: worker'lar her epoch yeniden açılmasın (spawn ile açılış Windows/macOS'ta pahalı)
+    kw = {"num_workers": num_workers, "persistent_workers": num_workers > 0}
+    tr = DataLoader(KidoDataset(df[df.bolum == "train"], train_tf, root), batch_size=batch, shuffle=True, **kw)
+    va = DataLoader(KidoDataset(df[df.bolum == "val"], eval_tf, root), batch_size=batch * 2, **kw)
     return tr, va

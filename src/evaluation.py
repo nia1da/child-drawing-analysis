@@ -31,7 +31,8 @@ def parse_experiment(name):
 
 def predict(model, table, size, root=ROOT, batch=64, num_workers=2):
     _, eval_tf = build_transforms(size)
-    dl = DataLoader(KidoDataset(table, eval_tf, root), batch_size=batch, num_workers=num_workers)
+    dl = DataLoader(KidoDataset(table, eval_tf, root), batch_size=batch, num_workers=num_workers,
+                    persistent_workers=num_workers > 0)
     model.eval(); probs = []
     with torch.no_grad(), torch.autocast("cuda", dtype=torch.float16, enabled=device == "cuda"):
         for x, _ in dl:

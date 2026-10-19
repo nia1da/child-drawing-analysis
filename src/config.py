@@ -34,5 +34,13 @@ def detect_environment():
     return "colab" if "COLAB_RELEASE_TAG" in os.environ else "local"
 
 
+# Ortama göre eğitim varsayılanları. Yerelde (RTX 4060, 8 GB) 448px'te batch 32 belleğe sığmıyor;
+# 16 x 2 accumulation ile etkin batch Colab'daki gibi 32 kalır.
+TRAINING_DEFAULTS = {
+    "local": {"batch_size": 16, "accum_steps": 2, "num_workers": 2},
+    "colab": {"batch_size": 32, "accum_steps": 1, "num_workers": 2},
+}
+
 ENV = detect_environment()
 PATHS = ENVIRONMENTS[ENV]
+DEFAULTS = TRAINING_DEFAULTS[ENV]
