@@ -7,3 +7,4 @@ scikit-learn==1.6.1
 pillow==11.3.0
 matplotlib==3.10.0
 gdown==5.2.2
+tzdata==2025.2  # Windows'ta zoneinfo saat dilimi verisi
