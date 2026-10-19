@@ -27,7 +27,12 @@
 - Colab'da KIDO zip'i (`bitirme/kido_dataset`) `data.prepare_data()` ile `/content/kido` altına açılır; görseller Drive'dan doğrudan okunmaz (yavaş).
 - Yollar `src/config.py`'deki `PATHS`'ten alınır; kodda ve notebook'ta sabit yol yazma.
   Ortam `COLAB_RELEASE_TAG` ile algılanır, `CIZIM_ENV=local|colab` ile zorlanabilir.
-  Yerelde: `data/kido/Dataset/Images`, `data/kido_metadata.csv`, `data/ciktilar/`.
+  Yerelde görseller ve metadata: `data/kido/Dataset/Images`, `data/kido_metadata.csv`.
+- Çıktılar (`.pt`, `deneyler.csv`, `tahminler/`) iki ortamda da Drive'daki `bitirme` klasörüne gider: yerel ve Colab
+  aynı `deneyler.csv`'ye yazar. Yerelde Google Drive for desktop üzerinden (Windows makinede `H:/My Drive/bitirme`);
+  `CIZIM_DRIVE` ile verilir, yoksa sürücü harfleri / macOS `~/Library/CloudStorage/GoogleDrive-*` aranır
+  ("My Drive" ya da "Drive'ım"). Bulunamazsa uyarı verip `data/ciktilar/`'a düşer (o zaman ortak kayda gitmez).
+  Colab ve yerelde aynı anda eğitim yapma: aynı dosyaya iki yerden yazmak Drive'da çakışma kopyası üretebilir.
 - Cihaz otomatik (`training.select_device`): CUDA > MPS > CPU. float16 AMP sadece CUDA'da.
 - Eğitim varsayılanları ortama göre (`config.TRAINING_DEFAULTS`): Colab batch 32, accum 1; yerel batch 16, accum 2,
   2 worker. RTX 4060'ta 448px batch 32 belleğe sığmıyor (ölçüm 2026-10-19: batch 16, convnext_tiny 448px,
@@ -60,7 +65,8 @@
 - Dosyalar her zaman `encoding="utf-8"` ile açılır (Windows'un varsayılanı cp1254).
 
 ## Kod yapısı
-- `src/config.py`: ortam algılama ve `PATHS` (`root`, `zip`, `metadata`, `output`).
+- `src/config.py`: ortam algılama, `PATHS` (`root`, `zip`, `metadata`, `output`), yerel Drive'ı bulma
+  (`find_local_drive`), ortama göre eğitim varsayılanları (`DEFAULTS`).
 - `src/data.py`: `prepare_data` (zip'i açar), metadata tablosu (`build_metadata`, `load_metadata`), `KidoDataset`,
   dönüşümler (`build_transforms`: beyaz pad ile kare; `aug`: `temel` = çevirme + döndürme, `renk` = + renk bozma,
   gri tonlama), `build_loaders`.
