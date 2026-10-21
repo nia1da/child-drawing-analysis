@@ -17,9 +17,9 @@ Son güncelleme: 2026-10-21. Aşamalar: `docs/plan.md`; kararlar: `docs/kararlar
 
 ## Sıradaki adım
 Görev uyumu planı adım 2 bitti (2026-10-21; dogrulayici GEÇTİ): normlar eğitim seviyesi x görev, ayrışma olasılık
-farkıyla (`docs/olcumler.md`, "Model tabanlı ölçümler"). **Karar bekliyor:** görev uyumu skorları üstte yığılıyor
-(50.–95. dilim 0,03–0,06'lık olasılık farkı); üst yarı kaba bant mı, tam yüzdelik + not mu? Sonra adım 3
-(`olcumler.md` bölümünü tamamlama) ve adım 4 (norm dosyası).
+farkıyla (`docs/olcumler.md`, "Model tabanlı ölçümler"). Yığılma kararı verildi: tam yüzdelik + her raporda not
+(`docs/kararlar.md`). Sıra: adım 3 (`olcumler.md` bölümünü tamamlama: tanım, sınırlamalar, yığılma notu), adım 4
+(norm dosyası `normlar/model_normlari.csv`), adım 5 (rapora bağlama).
 
 ## Açık sorular
 - **Okul bazında bölme:** kararda "öğrenci ve okul bazında" var, uygulanan öğrenci bazında. Test KIDO'nun resmi
