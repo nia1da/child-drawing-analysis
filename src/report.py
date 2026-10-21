@@ -4,7 +4,10 @@ Rapor betimleyicidir: çizimi ölçer ve aynı sınıf düzeyinde, aynı görevi
 çizimleriyle karşılaştırır. Tanı ya da yorum dili içermez; yorum uzmana aittir.
 
 Kullanım: python -m src.report <görüntü yolu> [--grade 3 --task mutlu] [--out <klasör>]
+          python -m src.report <mutlu çizim> <üzgün çizim>   (aynı çocuk: ayrışma da hesaplanır)
 KIDO dosya adlarında sınıf ve görev addan okunur. Çıktı: {out}/<ad>.json ve <ad>.txt; metin ekrana da basılır.
+İki görüntüde ayrıca {out}/<öğrenci>_cift.json ve .txt (ayrışma). Model tabanlı bölüm (görev uyumu, ayrışma):
+docs/olcumler.md; model ya da norm dosyası yoksa bölüm "çalışmadı" olur, ölçüm raporu yine çıkar.
 JSON bütün ölçümleri içerir; metin rapor sadece TEXT_MEASURES'ı (bu sırayla) gösterir.
 Karşılaştırma grubu MIN_GROUP'tan küçükse ⚠ verilmez, yerine "karşılaştırma grubu küçük" notu düşer.
 Doluluk MIN_FILL'in altındaysa SMALL_DRAWING_MEASURES'a ⚠ verilmez; metinde bu satırlar "*" ile işaretlenir.
@@ -18,6 +21,7 @@ import sys
 
 import pandas as pd
 
+from . import task_fit
 from .config import PATHS
 from .data import grade_from_filename, task_from_filename
 from .measurements.mask import FAINT_FLAG
@@ -85,8 +89,11 @@ def small_drawing_table(norms, candidates=SMALL_DRAWING_CANDIDATES):
     return pd.DataFrame(rows)
 
 
-def build_report(path, grade=None, emotion=None, norms=None):
-    """Ortak JSON formatındaki rapor sözlüğü. grade/emotion verilmezse KIDO dosya adından okunur."""
+def build_report(path, grade=None, emotion=None, norms=None, model_norms=None, p_sad=None):
+    """Ortak JSON formatındaki rapor sözlüğü. grade/emotion verilmezse KIDO dosya adından okunur.
+
+    model_norms verilirse `model_olcumleri` bölümü eklenir (p_sad verilmezse model çalıştırılır; hata olursa
+    bölüm "çalışmadı" olur, ölçümler etkilenmez)."""
     name = os.path.basename(path)
     grade = grade if grade is not None else grade_from_filename(name)
     emotion = emotion or task_from_filename(name)
@@ -112,7 +119,7 @@ def build_report(path, grade=None, emotion=None, norms=None):
                 "mesaj": FAINT_MESSAGE if values["soluk_renk_bayragi"] else None, "etkilenen": []},
                {"kimlik": "kucuk_cizim", "deger": float(values["doluluk_orani"]), "esik": MIN_FILL,
                 "bayrak": bool(tiny), "mesaj": SMALL_DRAWING_MESSAGE if tiny else None, "etkilenen": affected}]
-    return {
+    report = {
         "modul": "cizim",
         "surum": MEASUREMENT_VERSION,
         "kaynak": {"dosya": name},
@@ -121,8 +128,39 @@ def build_report(path, grade=None, emotion=None, norms=None):
         "normda_mi": bool((group.dosya == name).any()),
         "olcumler": measures,
         "kalite": quality,
-        "not": NOTE,
     }
+    if model_norms is not None:
+        report["model_olcumleri"] = model_part(path, grade, emotion, model_norms, p_sad)
+    report["not"] = NOTE
+    return report
+
+
+def model_part(path, grade, emotion, model_norms, p_sad=None):
+    try:
+        if p_sad is None:
+            p_sad = task_fit.score_image(path)
+        return task_fit.model_section(emotion, task_fit.level_from_grade(grade), p_sad, model_norms,
+                                      os.path.basename(path))
+    except Exception as e:  # torch ya da .pt yoksa, norm grubu boşsa: ölçüm raporu yine çıksın
+        return task_fit.failed_section(f"{type(e).__name__}: {e}")
+
+
+def build_pair_report(happy_path, sad_path, model_norms, p_happy=None, p_sad=None):
+    """Aynı çocuğun mutlu ve üzgün çizimi: ayrışma. Sınıf KIDO dosya adlarından (aynı olmalı)."""
+    names = [os.path.basename(happy_path), os.path.basename(sad_path)]
+    students = {"-".join(n.split("-")[:3]) for n in names}
+    grades = {grade_from_filename(n) for n in names}
+    if len(students) != 1 or len(grades) != 1:
+        raise ValueError(f"İki çizim aynı çocuğa ait olmalı (öğrenci {sorted(students)}, sınıf {sorted(grades)})")
+    if task_from_filename(names[0]) != "Happiness" or task_from_filename(names[1]) != "Sadness":
+        raise ValueError("Sırayla bir mutlu, bir üzgün çizim ver")
+    try:
+        p_happy = task_fit.score_image(happy_path) if p_happy is None else p_happy
+        p_sad = task_fit.score_image(sad_path) if p_sad is None else p_sad
+        sep = task_fit.separation_section(p_happy, p_sad, task_fit.level_from_grade(grades.pop()), model_norms)
+    except Exception as e:
+        sep = task_fit.failed_section(f"{type(e).__name__}: {e}")
+    return {"modul": "cizim_cift", "kaynak": {"dosyalar": names}, "ayrisma": sep, "not": NOTE}
 
 
 def _number(x, key, down=False):
@@ -133,6 +171,32 @@ def _number(x, key, down=False):
     if key.startswith("renklilik"):
         return f"{x:.1f}".replace(".", ",")
     return f"{round_down(x, 3) if down else x:.3f}".replace(".", ",")
+
+
+def percentile_text(p, who):
+    if p is None:
+        return "çizim bulunamadı, karşılaştırılamadı"
+    if p < 1:
+        return f"{who} 1. yüzdelik diliminin altında"
+    if p > 99:
+        return f"{who} 99. yüzdelik diliminin üstünde"
+    return f"{who} {round(p)}. yüzdelik diliminde"
+
+
+def model_lines(part):
+    """Görev uyumu satırı ve hemen altında sınırlama notları."""
+    if part["durum"] != "tamam":
+        return [f"Görev uyumu: çalışmadı ({part['neden']})"]
+    g, fit = part["karsilastirma_grubu"], part["gorev_uyumu"]
+    lines = [f"Görev uyumu ({fit['gorev']}): modelin bu çizimi KIDO'daki \"{fit['gorev']}\" görevi çizimlerine "
+             f"benzetme derecesi, {percentile_text(fit['yuzdelik'], 'karşılaştırma grubunun')}.",
+             f"  Karşılaştırma grubu: {g['ad']} {g['gorev']} normu, n={g['n']} ({g['kaynak']})"]
+    lines += [f"  Not: {n}" for n in part["notlar"]]
+    return lines + limitation_lines(part)
+
+
+def limitation_lines(part):
+    return ["  Sınırlamalar:"] + [f"   - {t}" for t in part["sinirlamalar"]]
 
 
 def format_text(report):
@@ -147,15 +211,7 @@ def format_text(report):
     starred = set(tiny["etkilenen"])
     for m in shown:
         value = _number(m["deger"], m["kimlik"], down=tiny["bayrak"] and m["kimlik"] == "doluluk_orani")
-        p = m["yuzdelik"]
-        if p is None:
-            where = "çizim bulunamadı, karşılaştırılamadı"
-        elif p < 1:
-            where = "akranlarının 1. yüzdelik diliminin altında"
-        elif p > 99:
-            where = "akranlarının 99. yüzdelik diliminin üstünde"
-        else:
-            where = f"akranlarının {round(p)}. yüzdelik diliminde"
+        where = percentile_text(m["yuzdelik"], "akranlarının")
         mark = "  ⚠" if m["aralik_disi"] else "  *" if m["kimlik"] in starred else ""
         lines.append(f"  {m['ad']:<{width}}  {value:>6}   {where}{mark}")
     notes = []
@@ -170,8 +226,28 @@ def format_text(report):
     notes += [f"Kalite: {q['mesaj']}." for q in report["kalite"] if q["bayrak"] and q is not tiny]
     if report["normda_mi"]:
         notes.append("Not: bu çizim karşılaştırma grubunun içinde (KIDO train).")
-    lines += ([""] + notes if notes else []) + ["", report["not"]]
+    lines += ([""] + notes if notes else [])
+    if "model_olcumleri" in report:
+        lines += [""] + model_lines(report["model_olcumleri"])
+    lines += ["", report["not"]]
     return "\n".join(lines)
+
+
+def format_pair_text(pair):
+    a = pair["ayrisma"]
+    head = f"Mutlu–üzgün ayrışma: {' + '.join(pair['kaynak']['dosyalar'])}"
+    if a["durum"] != "tamam":
+        return "\n".join([head, f"  çalışmadı ({a['neden']})", "", pair["not"]])
+    g = a["karsilastirma_grubu"]
+    d = f"{a['d']:.3f}".replace(".", ",")
+    kind = "logit" if a["skor"] == "d_logit" else "olasılık"
+    lines = [head,
+             f"  Ayrışma d = {d} ({kind} farkı: üzgün çizim − mutlu çizim), "
+             f"{percentile_text(a['yuzdelik'], 'karşılaştırma grubunun')}.",
+             f"  Karşılaştırma grubu: {g['ad']} normu, n={g['n']} ({g['kaynak']})"]
+    if a["yon"] == "ters":
+        lines.append("  Model iki çizimi görevlerinin tersi yönünde sıralıyor.")
+    return "\n".join(lines + limitation_lines(a) + ["", pair["not"]])
 
 
 def save(report, out_dir):
@@ -184,9 +260,19 @@ def save(report, out_dir):
     return f"{out_dir}/{stem}.json", f"{out_dir}/{stem}.txt"
 
 
+def save_pair(pair, out_dir):
+    os.makedirs(out_dir, exist_ok=True)
+    stem = "-".join(pair["kaynak"]["dosyalar"][0].split("-")[:3]) + "_cift"
+    with open(f"{out_dir}/{stem}.json", "w", encoding="utf-8") as f:
+        json.dump(pair, f, ensure_ascii=False, indent=2)
+    with open(f"{out_dir}/{stem}.txt", "w", encoding="utf-8") as f:
+        f.write(format_pair_text(pair) + "\n")
+    return f"{out_dir}/{stem}.json", f"{out_dir}/{stem}.txt"
+
+
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description="Çizim için betimleyici rapor")
-    p.add_argument("path", nargs="?", help="görüntü yolu")
+    p.add_argument("paths", nargs="*", help="görüntü yolu; iki yol: mutlu çizim, üzgün çizim (aynı çocuk)")
     p.add_argument("--grade", type=int, choices=range(1, 9), help="sınıf düzeyi (KIDO dosya adında yoksa)")
     p.add_argument("--task", choices=list(TASK_ARGS), help="görev (KIDO dosya adında yoksa)")
     p.add_argument("--out", default=f"{PATHS['output']}/raporlar")
@@ -202,9 +288,25 @@ if __name__ == "__main__":
         print("\nSMALL_DRAWING_MEASURES kuralla " + ("aynı." if rule == SMALL_DRAWING_MEASURES
                                                        else f"FARKLI, kural: {sorted(rule)}"))
         sys.exit()
-    if a.path is None:
-        p.error("görüntü yolu gerekli")
-    r = build_report(a.path, a.grade, TASK_ARGS.get(a.task))
-    paths = save(r, a.out)
-    print(format_text(r))
-    print(f"\nKaydedildi: {paths[0]}, {paths[1]}")
+    if not 1 <= len(a.paths) <= 2:
+        p.error("bir ya da iki görüntü yolu gerekli")
+    try:
+        model_norms = task_fit.load_model_norms()
+    except (OSError, RuntimeError) as e:
+        model_norms = None
+        print(f"Uyarı: model normları yüklenemedi, görev uyumu ve ayrışma yok ({e})")
+    if len(a.paths) == 2:
+        if a.grade or a.task:
+            p.error("iki görüntüde --grade / --task kullanılmaz (KIDO dosya adlarından okunur)")
+        if model_norms is None:
+            p.error("ayrışma için model normları gerekli")
+    for path in a.paths:
+        r = build_report(path, a.grade, TASK_ARGS.get(a.task), model_norms=model_norms)
+        paths = save(r, a.out)
+        print(format_text(r))
+        print(f"\nKaydedildi: {paths[0]}, {paths[1]}\n")
+    if len(a.paths) == 2:
+        pair = build_pair_report(a.paths[0], a.paths[1], model_norms)
+        paths = save_pair(pair, a.out)
+        print(format_pair_text(pair))
+        print(f"\nKaydedildi: {paths[0]}, {paths[1]}")

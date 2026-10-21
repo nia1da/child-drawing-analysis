@@ -250,6 +250,14 @@ tanım ve sınırlamalar.
 egitim, gorev, skor, olasilik_uzgun, ayrisma_skoru, model, surum. Cinsiyet sütunu yok. `MODEL_NORM_VERSION` (şimdi 1)
 ve model adı yüklemede kontrol edilir; uyuşmazsa hata verir.
 
+### Raporda (2026-10-21)
+`python -m src.report <görüntü>` JSON'a `model_olcumleri` ekler (model, norm sürümü, görev uyumu değeri / yüzdeliği,
+karşılaştırma grubu ve n, notlar, sınırlamalar) ve metin raporda ölçüm satırlarının altında "Görev uyumu" satırını,
+hemen altında karşılaştırma grubunu ve sınırlamaları gösterir. İki yol (mutlu, üzgün) verilirse ayrıca
+`<öğrenci>_cift.json/.txt`: `d`, yönü (`uygun` / `ters`), yüzdeliği. Model (`.pt`) ya da norm dosyası yoksa bölüm
+"çalışmadı" olur, ölçüm raporu etkilenmez. KIDO train'indeki çizimde "skor iyimser" notu, val'dekinde "karşılaştırma
+grubunun içinde" notu çıkar.
+
 ### Tanım ve kullanım (rapora girmeden önce)
 - **Ne ölçer:** modelin bu çizimi KIDO'da hangi göreve çizilmiş çizimlere benzettiği. Çocuğun duygu durumunu, görevi
   yapıp yapamadığını ya da bir klinik durumu göstermez.

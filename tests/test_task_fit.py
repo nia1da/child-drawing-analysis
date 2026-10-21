@@ -1,4 +1,5 @@
 """Görev uyumu ve ayrışma: sentetik tahmin tablolarıyla (KIDO ve model gerekmez)."""
+import os
 import tempfile
 import unittest
 from unittest import mock
@@ -7,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from src import task_fit as T
+from src.measurements.metrics import MEASURES
 
 
 def predictions(n_per_grade=40, seed=0, trend=0.0):
@@ -124,6 +126,89 @@ class ModelNormsTest(unittest.TestCase):
             T.load_model_norms(path, "baska_deney")
         with mock.patch.object(T, "MODEL_NORM_VERSION", 2), self.assertRaises(RuntimeError):
             T.load_model_norms(path, "deney_x")
+
+
+class ReportModelTest(unittest.TestCase):
+    """Rapora bağlama: model_olcumleri, sınırlama notları, çift raporu (model ve KIDO gerekmez)."""
+
+    def setUp(self):
+        from PIL import Image, ImageDraw
+        from tests.test_measurements import synthetic_norms
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        with mock.patch.object(T, "load_predictions", return_value=predictions()):
+            self.model_norms = T.build_model_norms("deney_x", self.tmp.name)
+        self.norms = synthetic_norms(200).assign(sinif=3)
+        img = Image.new("RGB", (200, 150), "white")
+        ImageDraw.Draw(img).rectangle([30, 30, 120, 100], outline="black", width=4)
+        self.happy = os.path.join(self.tmp.name, "101-3B-1-F-H.jpg")
+        self.sad = os.path.join(self.tmp.name, "101-3B-1-F-S.jpg")
+        img.save(self.happy)
+        img.save(self.sad)
+
+    def report(self, p_sad, **kw):
+        from src.report import build_report
+        with mock.patch.object(T, "kido_split", return_value=None):
+            return build_report(self.happy, norms=self.norms, model_norms=self.model_norms, p_sad=p_sad, **kw)
+
+    def test_section_values_and_limitations(self):
+        part = self.report(0.2)["model_olcumleri"]
+        self.assertEqual(part["durum"], "tamam")
+        fit = part["gorev_uyumu"]
+        self.assertEqual((fit["gorev"], fit["deger"], fit["olasilik_uzgun"]), ("mutlu", 0.8, 0.2))
+        group = part["karsilastirma_grubu"]
+        self.assertEqual((group["seviye"], group["n"]), ("Primary", 160))
+        self.assertEqual(part["sinirlamalar"], T.LIMITATIONS)
+        self.assertNotIn("cinsiyet", str(part).lower().replace("cinsiyete göre", ""))
+
+    def test_no_model_norms_keeps_old_report(self):
+        from src.report import build_report
+        self.assertNotIn("model_olcumleri", build_report(self.happy, norms=self.norms))
+
+    def test_text_limitations_right_below_task_fit(self):
+        from src.report import format_text
+        lines = format_text(self.report(0.2)).splitlines()
+        i = next(k for k, l in enumerate(lines) if l.startswith("Görev uyumu (mutlu)"))
+        self.assertIn("yüzdelik dilim", lines[i])
+        self.assertIn("Karşılaştırma grubu: ilkokul (1–4. sınıf) mutlu normu, n=160", lines[i + 1])
+        self.assertEqual(lines[i + 2], "  Sınırlamalar:")
+        self.assertEqual(sum(l.startswith("   - ") for l in lines[i + 3:]), len(T.LIMITATIONS))
+        self.assertNotIn("⚠", "\n".join(lines[i:]).replace("⚠ verilmez", ""))
+
+    def test_model_failure_does_not_break_report(self):
+        from src.report import format_text
+        with mock.patch.object(T, "score_image", side_effect=FileNotFoundError("x.pt")):
+            r = self.report(None)
+        self.assertEqual(r["model_olcumleri"]["durum"], "çalışmadı")
+        self.assertEqual(len(r["olcumler"]), len(MEASURES))
+        self.assertIn("Görev uyumu: çalışmadı", format_text(r))
+
+    def test_context_notes_from_split(self):
+        from src.report import build_report
+        for split, word in [("train", "eğitim verisinde"), ("val", "grubunun içinde")]:
+            with mock.patch.object(T, "kido_split", return_value=split):
+                part = build_report(self.happy, norms=self.norms, model_norms=self.model_norms,
+                                    p_sad=0.2)["model_olcumleri"]
+            self.assertTrue(any(word in n for n in part["notlar"]), split)
+
+    def test_pair_report_direction_and_percentile(self):
+        from src.report import build_pair_report, format_pair_text
+        good = build_pair_report(self.happy, self.sad, self.model_norms, p_happy=0.1, p_sad=0.9)["ayrisma"]
+        self.assertEqual((good["d"], good["yon"], good["skor"]), (0.8, "uygun", "d_olasilik"))
+        bad = build_pair_report(self.happy, self.sad, self.model_norms, p_happy=0.9, p_sad=0.1)
+        self.assertEqual(bad["ayrisma"]["yon"], "ters")
+        self.assertLess(bad["ayrisma"]["yuzdelik"], good["yuzdelik"])
+        self.assertIn("tersi yönünde sıralıyor", format_pair_text(bad))
+        self.assertEqual(good["sinirlamalar"], T.LIMITATIONS)
+
+    def test_pair_report_checks_student_and_order(self):
+        from src.report import build_pair_report
+        other = os.path.join(self.tmp.name, "101-3B-2-F-S.jpg")
+        open(other, "wb").close()
+        with self.assertRaises(ValueError):
+            build_pair_report(self.happy, other, self.model_norms, p_happy=0.1, p_sad=0.9)
+        with self.assertRaises(ValueError):
+            build_pair_report(self.sad, self.happy, self.model_norms, p_happy=0.1, p_sad=0.9)
 
 
 if __name__ == "__main__":

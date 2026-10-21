@@ -70,7 +70,8 @@
 - Hızlı test: `PY -m src.training --model convnext_tiny --size 320 --quick`,
   `PY -m src.evaluation --experiment convnext_tiny_448px_lr0.0001_ls0.1_s42 --quick`
 - Çizim raporu: `PY -m src.report data/kido/Dataset/Images/Emotion/train/Sadness/110-3H-1081-F-S.jpg`
-  (JSON + metin, Drive `raporlar/`). Normlar: `PY -m src.measurements.norms` (train, birkaç dakika).
+  (JSON + metin, Drive `raporlar/`). Görev uyumu ve ayrışma da raporda (`model_olcumleri`; model ya da `model_normlari.csv`
+  yoksa "çalışmadı"). İki yol (mutlu, üzgün; aynı çocuk) verilirse ayrışma `<öğrenci>_cift.json/.txt`'ye de yazılır. Normlar: `PY -m src.measurements.norms` (train, birkaç dakika).
   Maske kontrol sayfası: `PY -m src.measurements.mask_check` (train'den; Drive `maske_kontrol_<YYYYMMDD-HHMM>/`, onaylı
   `maske_kontrol/` üzerine yazılmaz).
 - Dosyalar her zaman `encoding="utf-8"` ile açılır (Windows'un varsayılanı cp1254).

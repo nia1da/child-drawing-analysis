@@ -16,6 +16,7 @@ Kullanım: python -m src.task_fit [--experiment <deney>] [--write-norms]
 import argparse
 import os
 import sys
+from functools import lru_cache
 
 import numpy as np
 import pandas as pd
@@ -23,6 +24,7 @@ from scipy.stats import kruskal, rankdata
 
 from .config import PATHS
 from .data import grade_from_filename
+from .measurements.norms import percentile
 from .stats import load_predictions
 
 REFERENCE = "convnext_tiny_320px_lr0.0001_ls0.1_s42"
@@ -165,6 +167,98 @@ def norm_group(norms, level, task=None):
     if task is None:
         return norms[(norms.tur == "cift") & (norms.egitim == level)].skor.values
     return norms[(norms.tur == "cizim") & (norms.egitim == level) & (norms.gorev == task)].skor.values
+
+
+# --- Rapor: tek görüntü için skor, yüzdelik ve ayrışma ---------------------------------------------------------------
+LEVEL_NAMES = {"Primary": "ilkokul (1–4. sınıf)", "Secondary": "ortaokul (5–8. sınıf)"}
+TASK_NAMES = {"Happiness": "mutlu", "Sadness": "üzgün"}
+# Her raporda aynı, koşulsuz (plan: "Rapor dili ve sınırlamalar"); cinsiyete göre koşullu gösterilmez
+LIMITATIONS = [
+    "Görev uyumu, çizimin KIDO'daki aynı görev çizimlerine modelce benzerliğidir; çocuğun duygu durumunu "
+    "göstermez.",
+    "Üst dilimlerde skorlar birbirine çok yakın (50.–95. dilim arası 0,03–0,06 olasılık farkı); küçük yüzdelik "
+    "farkları anlamlı okunmamalı.",
+    "Model ilkokul erkek çocukların mutlu çizimlerini daha sık \"üzgün\" görevine benzetir (448px modelde test: "
+    "%33,7); bu gruptaki çocuklarda düşük görev uyumu ve düşük ayrışma daha sık beklenir.",
+    "Seyrek ya da az renkli çizimlerde görev uyumu düşebilir; doluluk ve renk sayısıyla birlikte okunmalı.",
+    "Normlar KIDO (Şanlıurfa, 1–8. sınıf) val bölümünden; başka bir örneklemde dağılım farklı olabilir.",
+    "Bu ölçümlerde ⚠ verilmez.",
+]
+
+
+def level_from_grade(grade):
+    return "Primary" if int(grade) <= 4 else "Secondary"
+
+
+def kido_split(name):
+    """KIDO dosya adının bölümü (train/val/test); metadata yoksa ya da dosya orada değilse None."""
+    try:
+        meta = pd.read_csv(PATHS["metadata"], usecols=["dosya", "bolum"], encoding="utf-8")
+    except (OSError, ValueError, KeyError):
+        return None
+    hit = meta.bolum[meta.dosya == name]
+    return hit.iloc[0] if len(hit) else None
+
+
+@lru_cache(maxsize=2)
+def _load_model(experiment, output_dir):
+    import torch
+    from .evaluation import parse_experiment
+    from .training import build_model, device
+    name, size = parse_experiment(experiment)
+    model = build_model(name, pretrained=False)
+    model.load_state_dict(torch.load(f"{output_dir}/{experiment}.pt", map_location=device))
+    return model.eval(), size
+
+
+def score_image(path, experiment=REFERENCE, output_dir=PATHS["output"]):
+    """Modelin "üzgün" olasılığı (p); değerlendirmedeki dönüşümle (beyaz pad ile kare). CPU'da da çalışır."""
+    import torch
+    from PIL import Image
+    from .data import LABELS, build_transforms
+    from .training import device
+    model, size = _load_model(experiment, output_dir)
+    _, eval_tf = build_transforms(size)
+    x = eval_tf(Image.open(path)).unsqueeze(0).to(device)
+    with torch.no_grad(), torch.autocast("cuda", dtype=torch.float16, enabled=device == "cuda"):
+        return float(model(x).float().softmax(1)[0, LABELS["Sadness"]])
+
+
+def model_section(task, level, p_sad, norms, name=None, experiment=REFERENCE):
+    """Rapor JSON'unun `model_olcumleri` bölümü (tek çizim). task: Happiness / Sadness."""
+    fit = float(p_sad if task == "Sadness" else 1 - p_sad)
+    group = norm_group(norms, level, task)
+    pct = percentile(group, fit)
+    notes = []
+    split = kido_split(name) if name else None
+    if split == "train":
+        notes.append("Çizim modelin eğitim verisinde; skor iyimser olabilir.")
+    elif split == SPLIT:
+        notes.append("Çizim karşılaştırma grubunun içinde (KIDO val).")
+    return {"durum": "tamam", "model": experiment, "norm_surum": MODEL_NORM_VERSION,
+            "gorev_uyumu": {"gorev": TASK_NAMES[task], "deger": round(fit, 3), "olasilik_uzgun": round(float(p_sad), 4),
+                            "yuzdelik": None if pct is None else round(pct, 1)},
+            "karsilastirma_grubu": {"seviye": level, "ad": LEVEL_NAMES[level], "gorev": TASK_NAMES[task],
+                                    "n": int(len(group)), "kaynak": "KIDO val"},
+            "notlar": notes, "sinirlamalar": LIMITATIONS}
+
+
+def failed_section(reason, experiment=REFERENCE):
+    return {"durum": "çalışmadı", "neden": str(reason), "model": experiment, "notlar": [], "sinirlamalar": []}
+
+
+def separation_section(p_happy, p_sad, level, norms, experiment=REFERENCE):
+    """Aynı çocuğun iki çizimi: d = s(üzgün çizim) - s(mutlu çizim); skor türü normlardaki `ayrisma_skoru`."""
+    score = norms.ayrisma_skoru.iloc[0]
+    d = float(p_sad - p_happy) if score == "d_olasilik" else float(logit(p_sad) - logit(p_happy))
+    group = norm_group(norms, level)
+    pct = percentile(group, d)
+    return {"durum": "tamam", "model": experiment, "norm_surum": MODEL_NORM_VERSION, "skor": score,
+            "d": round(d, 3), "yon": "uygun" if d > 0 else "ters",
+            "yuzdelik": None if pct is None else round(pct, 1),
+            "karsilastirma_grubu": {"seviye": level, "ad": LEVEL_NAMES[level], "n": int(len(group)),
+                                    "kaynak": "KIDO val"},
+            "sinirlamalar": LIMITATIONS}
 
 
 def describe(pred):
