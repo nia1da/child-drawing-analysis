@@ -59,9 +59,11 @@ MEASURE_INFO = {
 }
 MEASURES = {k: label for k, (_, label) in MEASURE_INFO.items()}
 INTEGER_MEASURES = {"renk_sayisi", "cizgi_uzunlugu", "bilesen_sayisi"}
-# Çizim piksellerine (ya da onların bir alt kümesine) göre oransal ölçümler: çizim çok küçükse birkaç çizgiye dayanır
-PER_DRAWING_MEASURES = {"renk_entropisi", "ortalama_doygunluk", "koyu_ton_orani", "sicak_ton_payi", "renklilik_cizim",
-                        "boyama_orani", "kenar_yogunlugu_cizim", "cizgi_kalinligi"}
+# Küçük çizim kuralının adayları (report.small_drawing_table): çizim piksellerine (ya da alt kümesine) göre oransal
+# ölçümler ve renk sayısı (bölme başına HUE_MIN_PIXELS tabanı küçük çizimde renk düşürür). Doluluk, kapsayan kutu,
+# sayfa tabanlı, mutlak ve konum ölçümleri aday değil: küçük çizimde uç çıkmaları çizimin büyüklüğünü doğru betimler.
+SMALL_DRAWING_CANDIDATES = {"renk_sayisi", "renk_entropisi", "ortalama_doygunluk", "koyu_ton_orani", "sicak_ton_payi",
+                            "renklilik_cizim", "boyama_orani", "kenar_yogunlugu_cizim", "cizgi_kalinligi"}
 
 
 # Kompozisyon

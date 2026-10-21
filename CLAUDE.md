@@ -100,7 +100,9 @@
 - `src/report.py`: bir çizim için betimleyici rapor (JSON + metin); JSON'da bütün ölçümler, metinde sadece
   `TEXT_MEASURES` (doluluk, renk sayısı, renklilik, koyu ton, detay = kenar yoğunluğu; son ikisi çizim pikselleriyle).
   ⚠ akranların %5'inden azı bu kadar uçtaysa; grup 100'den küçükse (`MIN_GROUP`) ⚠ yerine "grup küçük" notu;
-  doluluk 0,03'ün altındaysa (`MIN_FILL`) oransal ölçümlere (`metrics.PER_DRAWING_MEASURES`) ⚠ verilmez, kalite notu.
+  doluluk 0,03'ün altındaysa (`MIN_FILL`) `SMALL_DRAWING_MEASURES`'a ⚠ verilmez, metinde "*" ve not. Küme kuralla
+  (adaylar `metrics.SMALL_DRAWING_CANDIDATES`; küçüklerde ⚠ oranı büyüklerin ≥ 2 katı) bir kez hesaplanıp sabitlendi;
+  tablo `docs/olcumler.md`'de, yeniden hesap `PY -m src.report --small-drawing-table`.
 - `notebooks/colab.ipynb`: güncel Colab notebook'u; repoyu clone/pull eder, sadece `src/` fonksiyonlarını çağırır.
 - `notebooks/grad_proj.ipynb`: arşiv (ilk keşif ve denemeler). Çıktıları eski sonuçların kaynağı, silinmemeli
   (`migrate_experiments` bu çıktıları okur); import'lar yeni adlara güncellendi, çıktılar olduğu gibi.

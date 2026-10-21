@@ -97,11 +97,42 @@ Renk:
   çizime dayanırdı); yüzdelikler gösterilir, raporda "karşılaştırma grubu küçük (n=…)" notu düşer. KIDO normlarında
   böyle grup yok; kural başka normlar (örn. ileride başka veri) için.
 - **Küçük çizim:** doluluk 0,03'ün altındaysa (`report.MIN_FILL`, ≈ 5350 piksel; train'in en düşük %1,2'si, 93 çizim)
-  çizim piksellerine göre oransal ölçümlere (`metrics.PER_DRAWING_MEASURES`: renk entropisi, ortalama doygunluk,
-  koyu ton, sıcak ton payı, renklilik, boyama oranı, kenar yoğunluğu (çizim), çizgi kalınlığı) ⚠ verilmez;
-  yüzdelikleri gösterilir, raporda "çizim çok küçük, oransal ölçümler güvenilir değil" kalite notu düşer
-  (JSON `kalite` içinde `kucuk_cizim`). Eşik bir uzlaşım, belirgin kırılma yok: oransal ölçümlerin %5–95 dışında
-  kalma oranı doluluk > 0,1'de %4–9, 0,02–0,03'te %19–54, < 0,01'de %44–78 (train).
+  küçük çizim kümesindeki ölçümlere (`report.SMALL_DRAWING_MEASURES`) ⚠ verilmez; yüzdelikleri gösterilir. Metin
+  raporda bu satırlar "*" ile işaretlenir, not: "* çizim çok küçük, bu ölçümler güvenilir değil". JSON'da `kalite`
+  içinde `kucuk_cizim` (`deger` yuvarlanmamış doluluk, `etkilenen` kümedeki ölçümler). Küçük çizimde doluluk
+  gösterimde aşağı yuvarlanır (0,02996 → 0,029), eşiğe çıkmış görünmesin. Eşik bir uzlaşım, belirgin kırılma yok.
+- **Küçük çizim kümesi kuralı:** adaylar çizim piksellerine (ya da alt kümesine) göre oransal ölçümler ve renk sayısı
+  (`metrics.SMALL_DRAWING_CANDIDATES`; renk sayısında bölme başına 50 piksel tabanı küçük çizimde renk düşürür).
+  Bir aday, doluluk < 0,03 olan train çizimlerindeki %5–95 dışı oranı, doluluk > 0,1 olanlardakinin en az 2 katıysa
+  kümeye girer. Oran ⚠ kuralıyla (kuyruk payı, aşağıda) ve her çizim kendi sınıf x görev grubunda hesaplanır.
+  Doluluk, kapsayan kutu, bölge dolulukları, sayfa tabanlı ölçümler, çizgi uzunluğu, bileşen sayısı ve ağırlık
+  merkezi aday değil: küçük çizimde uç çıkmaları çizimin küçüklüğünü doğru betimler, ⚠'leri kalır. Küme bir kez
+  hesaplanıp sabitlendi (2026-10-21, sürüm 3 normları); yeniden hesaplamak ve sabitle karşılaştırmak için
+  `python -m src.report --small-drawing-table`. Normlar değişince yeniden bakılır. Sonuç (%, train; küçük n=93,
+  sıcak ton payında 66; büyük n=6932, sıcak ton payında 6890):
+
+  | Ölçüm | Doluluk < 0,03 | Doluluk > 0,1 | Karar |
+  |---|---|---|---|
+  | Farklı renk sayısı | 24,7 | 4,4 | kümede |
+  | Renk entropisi | 7,5 | 7,1 | dışarıda |
+  | Ortalama doygunluk | 35,5 | 8,7 | kümede |
+  | Koyu ton oranı | 12,9 | 4,5 | kümede (2,9 kat) |
+  | Sıcak ton payı | 24,2 | 5,7 | kümede |
+  | Renklilik (çizim pikselleri) | 36,6 | 8,8 | kümede |
+  | Boyama oranı | 46,2 | 7,9 | kümede |
+  | Kenar yoğunluğu (çizim pikseli başına) | 45,2 | 8,1 | kümede |
+  | Ortalama çizgi kalınlığı | 53,8 | 8,1 | kümede |
+  | Doluluk oranı | 100 | 5,8 | aday değil |
+  | Ağırlık merkezi (x) | 32,3 | 8,3 | aday değil |
+  | Ağırlık merkezi (y) | 29,0 | 8,3 | aday değil |
+  | Kapsayan kutu oranı | 62,4 | 2,2 | aday değil |
+  | Bölge doluluğu (üst sol / üst orta / üst sağ) | 1,1 / 5,4 / 0 | 5,7 / 5,9 / 5,5 | aday değil |
+  | Bölge doluluğu (orta sol / merkez / orta sağ) | 3,2 / 2,2 / 0 | 6,4 / 6,3 / 5,5 | aday değil |
+  | Bölge doluluğu (alt sol / alt orta / alt sağ) | 15,1 / 37,6 / 1,1 | 7,2 / 8,1 / 5,9 | aday değil |
+  | Renklilik (sayfa) | 71,0 | 7,5 | aday değil |
+  | Kenar yoğunluğu (sayfa) | 89,2 | 7,1 | aday değil |
+  | Toplam çizgi uzunluğu | 79,6 | 8,2 | aday değil |
+  | Bağlı bileşen sayısı | 4,3 | 5,5 | aday değil |
 - Sınıf düzeyi dosya adından: `101-3B-560-F-H.jpg` → 3 (harf şube); görev son harften (H/S).
 - **Yüzdelik:** orta sıra (eşit değerlerin yarısı altta sayılır).
 - **⚠ (aralık dışı):** akranların %5'inden azı bu kadar düşük (ya da yüksek) bir değere sahipse. Orta sıra
@@ -110,6 +141,7 @@ Renk:
 - Ölçüm ya da maske tanımı değişirse `metrics.MEASUREMENT_VERSION` artırılır; eski normlar yüklenirken hata verir.
 - Rapor: `python -m src.report <görüntü yolu> [--grade N --task mutlu|uzgun]` → JSON + metin
   (Drive `raporlar/`). JSON modülden bağımsız: `modul`, `karsilastirma_grubu`, `olcumler`, `kalite`, `not`.
+  `kalite` girdilerinin hepsinde aynı alanlar: `kimlik`, `deger`, `esik`, `bayrak`, `mesaj`, `etkilenen` (boş olabilir).
   JSON bütün ölçümleri (tablo sırasıyla, `grup` alanıyla) içerir; metin rapor sadece beşini, bu sırayla gösterir:
   doluluk oranı, farklı renk sayısı, renklilik (çizim pikselleri), koyu ton oranı, detay (kenar yoğunluğu, çizim
   pikseli başına).

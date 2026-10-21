@@ -1,6 +1,6 @@
 """Maske kontrol sayfası: seçilmiş çizimlerin orijinali ve maskesi yan yana, gözle kontrol için.
 
-Her sınıf düzeyinden (1-8) 3 çizim; toplamda yarısı renkli, yarısı karakalem. Karakalem: maskedeki
+Her sınıf düzeyinden (1-8) 3 train çizimi; toplamda yarısı renkli, yarısı karakalem. Karakalem: maskedeki
 renkli (S > COLOR_S) piksel oranı %5'in altında. Çıktı {output}/maske_kontrol/: her çizim için bir PNG
 (orijinal | maske | maske kırmızıyla orijinalin üstünde), 4 özet sayfa (6'şar çizim) ve index.html.
 
@@ -29,11 +29,12 @@ def kind_of(r):
 
 
 def pick(df, per_grade=3, seed=0, pool=200):
-    """Her sınıf düzeyinden per_grade çizim, toplamda yarısı karakalem.
+    """Her sınıf düzeyinden per_grade çizim, toplamda yarısı karakalem; aday havuzu sadece train (test görseli okunmaz).
 
     Karakalem çizim nadir ve bazı sınıflarda havuzda hiç çıkmayabilir: karakalem kotası, karakalem adayı olan
     sınıflara sırayla dağıtılır (sınıf başına en çok per_grade - 1, en az bir renkli kalsın); kalan yerler renkli.
     """
+    df = df[df.bolum == "train"]
     rng = np.random.default_rng(seed)
     kinds = {}
     for g in range(1, 9):

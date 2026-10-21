@@ -2,6 +2,7 @@
 import os
 import tempfile
 import unittest
+from unittest import mock
 
 import numpy as np
 import pandas as pd
@@ -236,6 +237,19 @@ class StructureTest(unittest.TestCase):
         self.assertEqual([k for k in measured(arr) if k in MEASURES], list(MEASURES))
 
 
+class MaskCheckTest(unittest.TestCase):
+    def test_pick_reads_only_train_images(self):
+        from src.measurements import mask_check as C
+        df = pd.DataFrame([{"dosya": f"101-{g}A-{i}-F-H.jpg", "duygu": "Happiness", "bolum": b}
+                           for g in range(1, 9) for b in ("train", "val", "test") for i in range(4)])
+        read = []
+        with mock.patch.object(C, "image_path", side_effect=lambda r: read.append(r.bolum) or r.dosya), \
+                mock.patch.object(C, "load_drawing", return_value=Image.fromarray(page())):
+            C.pick(df, per_grade=1, pool=4)
+        self.assertTrue(read)
+        self.assertEqual(set(read), {"train"})
+
+
 class NormsTest(unittest.TestCase):
     def test_percentile_mid_rank(self):
         self.assertEqual(percentile([1, 2, 3, 4], 2.5), 50.0)
@@ -271,6 +285,18 @@ class ReportTest(unittest.TestCase):
             path = os.path.join(d, "101-3B-1-F-H.jpg")
             Image.fromarray(arr).save(path, quality=95)
             return build_report(path, norms=norms)
+
+    def report_with_fill(self, norms, fill):
+        # Ölçümler yarı siyah sayfadan, doluluk elle: eşik sınırını görüntü çizmeden denemek için
+        from src import report as R
+        with tempfile.TemporaryDirectory() as d:
+            arr = page()
+            arr[:, : W // 2] = 0
+            path = os.path.join(d, "101-3B-1-F-H.jpg")
+            Image.fromarray(arr).save(path, quality=95)
+            values = {**R.measure(path), "doluluk_orani": fill}
+        with mock.patch.object(R, "measure", return_value=values):
+            return R.build_report("101-3B-1-F-H.jpg", norms=norms)
 
     def test_report_structure_and_flags(self):
         from src.report import format_text, save
@@ -315,31 +341,87 @@ class ReportTest(unittest.TestCase):
         self.assertNotIn("⚠", text)
         self.assertIn(f"karşılaştırma grubu küçük (n={MIN_GROUP - 1})", text)
 
-    def test_tiny_drawing_no_flags_on_per_drawing_measures(self):
-        from src.measurements.metrics import PER_DRAWING_MEASURES
-        from src.report import MIN_FILL, SMALL_DRAWING_MESSAGE, format_text
+    def test_tiny_drawing_no_flags_on_small_drawing_measures(self):
+        from src.report import MIN_FILL, SMALL_DRAWING_MEASURES, SMALL_DRAWING_MESSAGE, format_text
         arr = page()
         for y in range(120, 220, 25):
-            arr[y:y + 2, 150:350] = 0  # ince siyah çizgiler: doluluk ≈ 0,009, koyu ton 1, renklilik 0
+            arr[y:y + 2, 150:350] = 0  # ince siyah çizgiler: doluluk ≈ 0,009, koyu ton 1, renk sayısı ve renklilik 0
         r = self.report(synthetic_norms(200), arr)
         by_key = {m["kimlik"]: m for m in r["olcumler"]}
         self.assertLess(by_key["doluluk_orani"]["deger"], MIN_FILL)
-        self.assertEqual(by_key["doluluk_orani"]["aralik_disi"], "alt")  # doluluk kendisi oransal değil: ⚠ kalır
-        for k in PER_DRAWING_MEASURES:
+        self.assertEqual(by_key["doluluk_orani"]["aralik_disi"], "alt")  # doluluk kümede değil: ⚠ kalır
+        for k in SMALL_DRAWING_MEASURES:
             self.assertIsNone(by_key[k]["aralik_disi"], k)
+        self.assertEqual(by_key["renklilik"]["aralik_disi"], "alt")  # sayfa tabanlı renklilik kümede değil
         self.assertIsNotNone(by_key["renklilik_cizim"]["yuzdelik"])  # yüzdelik gösterilir
         quality = {q["kimlik"]: q for q in r["kalite"]}
         self.assertTrue(quality["kucuk_cizim"]["bayrak"])
+        self.assertEqual(quality["kucuk_cizim"]["etkilenen"], sorted(SMALL_DRAWING_MEASURES))
         text = format_text(r)
-        self.assertIn(SMALL_DRAWING_MESSAGE, text)
-        flagged = [line for line in text.splitlines() if line.endswith("⚠")]
-        self.assertTrue(all(line.strip().startswith(("Doluluk", "Farklı renk")) for line in flagged), flagged)
+        self.assertIn(f"* {SMALL_DRAWING_MESSAGE}.", text)
+        lines = {name: next(line for line in text.splitlines() if line.strip().startswith(name))
+                 for name in ["Doluluk", "Farklı renk", "Renklilik", "Koyu ton", "Detay"]}
+        self.assertTrue(lines["Doluluk"].endswith("⚠"), lines["Doluluk"])
+        for name in ["Farklı renk", "Renklilik", "Koyu ton", "Detay"]:
+            self.assertTrue(lines[name].endswith("*"), lines[name])
 
     def test_normal_drawing_has_no_small_drawing_note(self):
         from src.report import SMALL_DRAWING_MESSAGE, format_text
         r = self.report(synthetic_norms(200))
-        self.assertFalse({q["kimlik"]: q for q in r["kalite"]}["kucuk_cizim"]["bayrak"])
-        self.assertNotIn(SMALL_DRAWING_MESSAGE, format_text(r))
+        quality = {q["kimlik"]: q for q in r["kalite"]}
+        self.assertFalse(quality["kucuk_cizim"]["bayrak"])
+        self.assertEqual(quality["kucuk_cizim"]["etkilenen"], [])
+        self.assertEqual(quality["soluk_renk"]["etkilenen"], [])  # her kalite girdisinde aynı alanlar
+        self.assertEqual(set(quality["soluk_renk"]), set(quality["kucuk_cizim"]))
+        text = format_text(r)
+        self.assertNotIn(SMALL_DRAWING_MESSAGE, text)
+        self.assertFalse(any(line.endswith("*") for line in text.splitlines()))
+
+    def test_small_drawing_threshold_boundary(self):
+        from src.report import MIN_FILL, format_text
+        at = {q["kimlik"]: q for q in self.report_with_fill(synthetic_norms(200), MIN_FILL)["kalite"]}
+        self.assertFalse(at["kucuk_cizim"]["bayrak"])  # eşitte bayrak yok
+        r = self.report_with_fill(synthetic_norms(200), 0.02996)
+        below = {q["kimlik"]: q for q in r["kalite"]}["kucuk_cizim"]
+        self.assertTrue(below["bayrak"])
+        self.assertEqual(below["deger"], 0.02996)  # yuvarlanmadan
+        fill = {m["kimlik"]: m for m in r["olcumler"]}["doluluk_orani"]["deger"]
+        self.assertLess(fill, MIN_FILL)  # gösterimde eşiğe yuvarlanmıyor
+        self.assertIn("0,029", format_text(r))
+        self.assertNotIn("0,030", format_text(r))
+
+    def test_round_down_exact_decimals(self):
+        from src.report import round_down
+        self.assertEqual(round_down(0.0029, 4), 0.0029)
+        self.assertEqual(round_down(0.02996, 4), 0.0299)
+        self.assertEqual(round_down(0.02996, 3), 0.029)
+
+    def test_small_group_and_tiny_drawing_together(self):
+        from src.report import MIN_GROUP, SMALL_DRAWING_MESSAGE, format_text
+        r = self.report_with_fill(synthetic_norms(MIN_GROUP - 1), 0.01)
+        self.assertTrue(all(m["aralik_disi"] is None for m in r["olcumler"]))
+        text = format_text(r)
+        self.assertNotIn("⚠", text)
+        self.assertIn(f"karşılaştırma grubu küçük (n={MIN_GROUP - 1})", text)
+        self.assertIn(f"* {SMALL_DRAWING_MESSAGE}.", text)
+
+    def test_small_drawing_table_rule(self):
+        from src.report import LARGE_FILL, MIN_FILL, small_drawing_table
+        norms = synthetic_norms(400, seed=1)
+        tiny = norms.index[:40]
+        norms.loc[tiny, "doluluk_orani"] = MIN_FILL / 2
+        norms.loc[norms.index[40:], "doluluk_orani"] = 2 * LARGE_FILL
+        norms.loc[tiny[:15], "cizgi_kalinligi"] = 5.0  # grubun %3,75'i, küçüklerin %37,5'i uç: kümeye girmeli
+        norms.loc[tiny[:30], "renk_entropisi"] = 0.5  # orta değer: kümeye girmemeli
+        # Grubun %7,5'i 0 (hepsi küçük): orta sıra yüzdeliği 3,75 (< 5) ama kuyruk payı 7,5: ⚠ kuralıyla uç değil
+        norms.loc[tiny[:30], "koyu_ton_orani"] = 0.0
+        table = small_drawing_table(norms, candidates={"cizgi_kalinligi", "renk_entropisi", "koyu_ton_orani"})
+        table = table.set_index("olcum")
+        self.assertEqual(table.loc["cizgi_kalinligi", "karar"], "kümede")
+        self.assertEqual(table.loc["renk_entropisi", "karar"], "dışarıda")
+        self.assertEqual(table.loc["koyu_ton_orani", "karar"], "dışarıda")
+        self.assertEqual(table.loc["doluluk_orani", "karar"], "aday değil")
+        self.assertEqual(table.loc["cizgi_kalinligi", "kucuk_n"], 40)
 
 
 if __name__ == "__main__":
