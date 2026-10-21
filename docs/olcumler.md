@@ -202,8 +202,8 @@ Sürüm 2 ölçümlerinin sınırlamaları:
 
 ## Model tabanlı ölçümler (görev uyumu, mutlu–üzgün ayrışma)
 
-Plan: `docs/plan_gorev_uyumu.md`. Kod: `src/task_fit.py` (`python -m src.task_fit`). Bu bölüm adım 3'te
-tamamlanacak (tanım, sınırlamalar); şimdilik adım 2'nin sonuçları.
+Plan: `docs/plan_gorev_uyumu.md`. Kod: `src/task_fit.py` (`python -m src.task_fit`). Önce val analizi sonuçları, sonra
+tanım ve sınırlamalar.
 
 - **Model:** donmuş referans model `convnext_tiny_320px_lr0.0001_ls0.1_s42` (320px, değerlendirmedeki dönüşüm).
   `p` = modelin "üzgün" olasılığı.
