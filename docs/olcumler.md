@@ -246,7 +246,7 @@ tanım ve sınırlamalar.
 ### Norm dosyası
 `{output}/normlar/model_normlari.csv` (`python -m src.task_fit --write-norms`, 2026-10-21): val'den 2079 satır;
 `tur=cizim` 1386 satır (skor = görev uyumu; ilkokul mutlu / üzgün 346 / 346, ortaokul 347 / 347), `tur=cift` 693 satır
-(skor = `d`, ayrışma skoru sütunda: `olasilik`; ilkokul 346, ortaokul 347). Sütunlar: tur, dosya, ogrenci, sinif,
+(skor = `d`, ayrışma skoru `ayrisma_skoru` sütununda: `d_olasilik`; ilkokul 346, ortaokul 347). Sütunlar: tur, dosya, ogrenci, sinif,
 egitim, gorev, skor, olasilik_uzgun, ayrisma_skoru, model, surum. Cinsiyet sütunu yok. `MODEL_NORM_VERSION` (şimdi 1)
 ve model adı yüklemede kontrol edilir; uyuşmazsa hata verir.
 
