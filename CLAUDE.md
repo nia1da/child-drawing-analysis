@@ -158,6 +158,9 @@
   Koddaki `df.duygu`, `t.gercek` gibi erişimler bu yüzden Türkçe.
 - Git işlemlerini (commit, branch, push) kullanıcı yapar. Claude sadece kodu düzenler,
   değişiklikleri küçük ve anlamlı parçalar halinde tutar ve neyin değiştiğini özetler.
+- Ölçüm veya norm kodunda bir iş bitince, bana raporlamadan önce dogrulayici subagent'ını çalıştır.
+- Yeni bir aşamaya başlamadan önce planı ve bir aşama bitince sonucu denetleyici subagent'ına göster; çıktısını bana
+  raporla. Aşamalar `docs/plan.md`, hedef rapor `docs/rapor_taslagi.md`.
 - Eğitim kodunda değişiklik yapınca Colab'a göndermeden önce `--quick` (`train(..., quick=True)`) ile yerelde test et:
   bölüm başına her sınıftan 8 görsel, 1 epoch, batch 4 (accum ortam varsayılanı). Hızlı mod model kaydetmez ve `deneyler.csv`'ye yazmaz;
   gerçek sonuçlar sadece Colab'daki tam eğitimlerden gelir.
