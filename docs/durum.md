@@ -16,9 +16,10 @@ Son güncelleme: 2026-10-21. Aşamalar: `docs/plan.md`; kararlar: `docs/kararlar
 - İş akışı CLAUDE.md'ye yazıldı; `docs/kararlar.md` ve bu dosya oluşturuldu.
 
 ## Sıradaki adım
-Görev uyumu planı, adım 2: val analizi; önce `d` için olasılık / logit seçimi, sonra önceden yazılmış ölçütle norm
-grubu kararı. Adım 1 bitti (2026-10-21): referans modelin val tahminleri Drive
-`tahminler/convnext_tiny_320px_lr0.0001_ls0.1_s42_val.csv`; val macro F1 0,8095, kayıtla aynı.
+Görev uyumu planı adım 2 bitti (2026-10-21; dogrulayici GEÇTİ): normlar eğitim seviyesi x görev, ayrışma olasılık
+farkıyla (`docs/olcumler.md`, "Model tabanlı ölçümler"). **Karar bekliyor:** görev uyumu skorları üstte yığılıyor
+(50.–95. dilim 0,03–0,06'lık olasılık farkı); üst yarı kaba bant mı, tam yüzdelik + not mu? Sonra adım 3
+(`olcumler.md` bölümünü tamamlama) ve adım 4 (norm dosyası).
 
 ## Açık sorular
 - **Okul bazında bölme:** kararda "öğrenci ve okul bazında" var, uygulanan öğrenci bazında. Test KIDO'nun resmi

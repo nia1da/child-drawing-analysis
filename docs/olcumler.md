@@ -199,3 +199,38 @@ Sürüm 2 ölçümlerinin sınırlamaları:
     alanıyla büyür: ince çizgilerden oluşan çizim yüksek, geniş boyama düşük değer alır. Boyama oranıyla −0,67,
     ortalama çizgi kalınlığıyla −0,75 ilişkili (train). Değer "çok ayrıntı" kadar "ince çizgi / az boyama" da
     demektir.
+
+## Model tabanlı ölçümler (görev uyumu, mutlu–üzgün ayrışma)
+
+Plan: `docs/plan_gorev_uyumu.md`. Kod: `src/task_fit.py` (`python -m src.task_fit`). Bu bölüm adım 3'te
+tamamlanacak (tanım, sınırlamalar); şimdilik adım 2'nin sonuçları.
+
+- **Model:** donmuş referans model `convnext_tiny_320px_lr0.0001_ls0.1_s42` (320px, değerlendirmedeki dönüşüm).
+  `p` = modelin "üzgün" olasılığı.
+- **Görev uyumu:** mutlu görevinde `1 − p`, üzgün görevinde `p`. Raporda yüzdelik olarak; ⚠ verilmez.
+- **Ayrışma:** `d = p(üzgün çizim) − p(mutlu çizim)` (olasılık farkı). Ölçüte göre (iki skoru da aynı uçta, < 0,1 ya
+  da > 0,9, olan çiftler %25'ten fazlaysa logit) olasılık kaldı: val'de bu çiftler %5,9. `d > 0` olan çiftler %86,4.
+- **Norm kaynağı:** KIDO val (1386 çizim, 693 öğrenci). Val model ve ayar seçiminde kullanıldı; iyimserlik payı
+  testte ölçülecek (plan adım 6).
+- **Norm grubu: eğitim seviyesi x görev** (ilkokul 1–4: 346 çizim / öğrenci; ortaokul 5–8: 347). Ölçüt val
+  tahminlerinden önce yazıldı (Kruskal–Wallis p < 0,05 / 6 ve bir sınıfın havuzdaki medyan yüzdeliğinin 50'den
+  ≥ 10 puan sapması, ikisi aynı hücrede). Val sonucu (her sınıfın havuzdaki medyan yüzdeliği):
+
+  | Hücre | KW p | En büyük sapma | Sınıf medyanları |
+  |---|---|---|---|
+  | Görev uyumu, ilkokul, mutlu | 0,52 | 4,0 | 1: 48,3 · 2: 49,9 · 3: 48,0 · 4: 54,0 |
+  | Görev uyumu, ilkokul, üzgün | 0,073 | 9,4 | 1: 40,6 · 2: 45,5 · 3: 55,8 · 4: 53,0 |
+  | Görev uyumu, ortaokul, mutlu | 0,71 | 9,2 | 5: 55,0 · 6: 46,8 · 7: 52,0 · 8: 40,8 |
+  | Görev uyumu, ortaokul, üzgün | 0,030 | 11,8 | 5: 48,1 · 6: 52,0 · 7: 38,2 · 8: 58,1 |
+  | Ayrışma, ilkokul | 0,22 | 13,2 | 1: 42,3 · 2: 36,8 · 3: 54,2 · 4: 53,3 |
+  | Ayrışma, ortaokul | 0,21 | 6,9 | 5: 50,4 · 6: 51,4 · 7: 43,1 · 8: 53,2 |
+
+  Hiçbir hücrede iki koşul birlikte sağlanmadı. İki hücrede sapma 10 puanı geçti ama anlamlı değil (ortaokul üzgün:
+  7. sınıf 38,2; ilkokul ayrışma: 2. sınıf 36,8); sınıf grupları küçük (val'de sınıf başına 44–134 çizim). Karar
+  Bonferroni düzeltmesine bağlı: ortaokul üzgün hücresinin düzeltmesiz p'si 0,030; düzeltme olmasaydı bu hücre iki
+  koşulu da sağlar, karar sınıf x görev olurdu. Ayrışmada logit kullanılsaydı karar değişmezdi (p 0,23 / 0,25).
+  Sınırlama olarak not edilir.
+- **Skor yığılması:** görev uyumunun medyanı 0,91–0,94, %75'lik değeri 0,95, %95'lik değeri 0,96–0,97 (dört hücre
+  de). Üst yarıdaki yüzdelik farkları (50. ile 95. dilim) hücreye göre 0,031–0,056'lık olasılık farkına dayanıyor; label smoothing
+  0,1 skorları 0,95 civarında topluyor. Mutlu çizimlerin %53–55'inde, üzgün çizimlerin %55–62'sinde görev uyumu
+  0,9'un üstünde.

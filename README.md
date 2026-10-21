@@ -41,6 +41,7 @@ src/                  kod
   evaluation.py       kayıtlı modeli bir bölümde değerlendirme, alt grup F1'leri, tahmin dosyaları
   stats.py            öğrenci bazlı bootstrap güven aralıkları
   analysis.py         güven bandı, hata yönü, deney karşılaştırması
+  task_fit.py         görev uyumu ve mutlu–üzgün ayrışma: val analizi, norm grubu kararı
   migrate_experiments.py  deneyler.csv'nin sütun düzeni ve satır ekleme
   report.py           çizim raporu (JSON + metin)
   measurements/       çizim maskesi (mask.py), ölçümler (metrics.py), normlar (norms.py),
