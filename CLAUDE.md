@@ -95,7 +95,7 @@
   eşik val'de, `{deney}_esik.json`), `error_direction` (mutlu→üzgün / üzgün→mutlu, alt grup) ve `compare`
   (seed ortalamalı ayar kıyası).
 - `src/task_fit.py`: görev uyumu ve mutlu–üzgün ayrışma (val tahminlerinden), norm grubu ölçütü
-  (`norm_group_decision`; plan `docs/plan_gorev_uyumu.md`). `python -m src.task_fit`.
+  (`norm_group_decision`; plan `docs/plan_gorev_uyumu.md`). `python -m src.task_fit` (`--write-norms`: `{output}/normlar/model_normlari.csv`).
 - `src/migrate_experiments.py`: `deneyler.csv`'nin sütun düzeni (`COLUMNS`, `ADDED_COLUMNS`), eski düzenlerden taşıma
   (ilk 4 sütunlu düzen ya da eksik yeni sütunlar) ve satır ekleme (`append_record`).
 - `tests/`: `unittest` testleri (`test_splits.py`: aynı öğrenci iki bölümde olmamalı; `test_accumulation.py`:

@@ -243,6 +243,13 @@ tanım ve sınırlamalar.
   −0,188 / 0,218 / 0,745 / 0,876 / 0,916. `d < 0` olan çiftler ilkokulda %15,6, ortaokulda %11,5. Üst uçta (75. dilimden
   sonra) `d` label smoothing yüzünden ≈ 0,92'de tavan yapar; orada da küçük fark yorumlanmaz, aynı not geçerli.
 
+### Norm dosyası
+`{output}/normlar/model_normlari.csv` (`python -m src.task_fit --write-norms`, 2026-10-21): val'den 2079 satır;
+`tur=cizim` 1386 satır (skor = görev uyumu; ilkokul mutlu / üzgün 346 / 346, ortaokul 347 / 347), `tur=cift` 693 satır
+(skor = `d`, ayrışma skoru sütunda: `olasilik`; ilkokul 346, ortaokul 347). Sütunlar: tur, dosya, ogrenci, sinif,
+egitim, gorev, skor, olasilik_uzgun, ayrisma_skoru, model, surum. Cinsiyet sütunu yok. `MODEL_NORM_VERSION` (şimdi 1)
+ve model adı yüklemede kontrol edilir; uyuşmazsa hata verir.
+
 ### Tanım ve kullanım (rapora girmeden önce)
 - **Ne ölçer:** modelin bu çizimi KIDO'da hangi göreve çizilmiş çizimlere benzettiği. Çocuğun duygu durumunu, görevi
   yapıp yapamadığını ya da bir klinik durumu göstermez.

@@ -6,15 +6,22 @@
   sınıf düzeyleri arasında Kruskal–Wallis (p < ALPHA / hücre sayısı) ve bir sınıfın havuzdaki medyan yüzdeliğinin
   50'den en az MIN_SHIFT puan sapması. İkisi birden bir hücrede sağlanırsa "belirgin eğilim": sınıf x görev normu.
 
-Kullanım: python -m src.task_fit [--experiment <deney>]   (val tahminleri: python -m src.evaluation --split val)
+Norm dosyası {output}/normlar/model_normlari.csv: val'deki her çizim (tur=cizim, skor = görev uyumu) ve her öğrenci
+çifti (tur=cift, skor = d) için bir satır; cinsiyet sütunu yok. Model ya da çıkarım dönüşümü değişirse
+MODEL_NORM_VERSION artırılır, normlar yeniden üretilir.
+
+Kullanım: python -m src.task_fit [--experiment <deney>] [--write-norms]
+(val tahminleri: python -m src.evaluation --split val)
 """
 import argparse
+import os
 import sys
 
 import numpy as np
 import pandas as pd
 from scipy.stats import kruskal, rankdata
 
+from .config import PATHS
 from .data import grade_from_filename
 from .stats import load_predictions
 
@@ -26,6 +33,7 @@ ALPHA, MIN_SHIFT = 0.05, 10
 # d için logit, val çiftlerinin bu oranından fazlasında iki skor da aynı uçtaysa (ikisi de < LOW ya da > HIGH)
 SATURATION_SHARE, SATURATION_LOW, SATURATION_HIGH = 0.25, 0.1, 0.9
 EPS = 1e-6  # logit için olasılık [EPS, 1 - EPS]'e kırpılır
+MODEL_NORM_VERSION = 1  # model ya da çıkarım dönüşümü (320px, beyaz pad) değişirse artır
 
 
 def with_task_fit(pred):
@@ -118,6 +126,47 @@ def norm_group_decision(pred):
     return table, ("sinif" if table.belirgin.any() else "seviye")
 
 
+def norms_path(output_dir=PATHS["output"]):
+    return f"{output_dir}/normlar/model_normlari.csv"
+
+
+def build_model_norms(experiment=REFERENCE, output_dir=PATHS["output"]):
+    """Val tahminlerinden norm tablosunu üretir ve yazar. Ayrışma skoru ölçüte göre seçilir (`separation_score`)."""
+    pred = load_predictions(experiment, SPLIT)
+    t = with_task_fit(pred)
+    pt = pairs(pred)
+    score = separation_score(pt)
+    single = pd.DataFrame({"tur": "cizim", "dosya": t.dosya, "ogrenci": t.ogrenci, "sinif": t.sinif,
+                           "egitim": t.egitim, "gorev": t.duygu, "skor": t.gorev_uyumu,
+                           "olasilik_uzgun": t.olasilik_uzgun})
+    paired = pd.DataFrame({"tur": "cift", "dosya": "", "ogrenci": pt.ogrenci, "sinif": pt.sinif,
+                           "egitim": pt.egitim, "gorev": "", "skor": pt[score], "olasilik_uzgun": np.nan})
+    norms = pd.concat([single, paired], ignore_index=True)
+    norms["ayrisma_skoru"] = score
+    norms["model"] = experiment
+    norms["surum"] = MODEL_NORM_VERSION
+    path = norms_path(output_dir)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    norms.to_csv(path, index=False)
+    return norms
+
+
+def load_model_norms(path=None, experiment=REFERENCE):
+    norms = pd.read_csv(path or norms_path(), keep_default_na=False, na_values=[""])
+    if set(norms.surum.unique()) != {MODEL_NORM_VERSION} or set(norms.model.unique()) != {experiment}:
+        raise RuntimeError(f"Model normları sürüm {set(norms.surum.unique())} / model {set(norms.model.unique())}, "
+                           f"kod {MODEL_NORM_VERSION} / {experiment}: normları yeniden üret "
+                           "(python -m src.task_fit --write-norms).")
+    return norms
+
+
+def norm_group(norms, level, task=None):
+    """Karşılaştırma grubu: görev uyumu için (seviye, görev), ayrışma için (seviye). Skorlar dizi olarak."""
+    if task is None:
+        return norms[(norms.tur == "cift") & (norms.egitim == level)].skor.values
+    return norms[(norms.tur == "cizim") & (norms.egitim == level) & (norms.gorev == task)].skor.values
+
+
 def describe(pred):
     """Betimleyici özet: hücre bazında görev uyumu dağılımı ve uçlardaki yığılma."""
     t = with_task_fit(pred)
@@ -133,6 +182,7 @@ def describe(pred):
 if __name__ == "__main__":
     a = argparse.ArgumentParser(description="Görev uyumu ve ayrışma: val analizi ve norm grubu kararı")
     a.add_argument("--experiment", default=REFERENCE)
+    a.add_argument("--write-norms", action="store_true", help="Val'den norm dosyasını (Drive normlar/) yaz")
     args = a.parse_args()
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
@@ -150,3 +200,7 @@ if __name__ == "__main__":
     print(f"Norm grubu ölçütü (Kruskal–Wallis p < {ALPHA}/{len(table)} = {ALPHA / len(table):.4f}, "
           f"sapma ≥ {MIN_SHIFT} puan):\n" + table.to_string(index=False))
     print(f"\nKarar: {'sınıf x görev' if decision == 'sinif' else 'eğitim seviyesi x görev'}")
+    if args.write_norms:
+        norms = build_model_norms(args.experiment)
+        print(f"\nNorm dosyası yazıldı: {norms_path()} ({(norms.tur == 'cizim').sum()} çizim, "
+              f"{(norms.tur == 'cift').sum()} çift)")

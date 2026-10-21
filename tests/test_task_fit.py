@@ -1,4 +1,5 @@
 """Görev uyumu ve ayrışma: sentetik tahmin tablolarıyla (KIDO ve model gerekmez)."""
+import tempfile
 import unittest
 from unittest import mock
 
@@ -93,6 +94,36 @@ class TaskFitTest(unittest.TestCase):
         self.assertTrue(cell.anlamli)
         self.assertFalse(cell.pratik)
         self.assertEqual(decision, "seviye")
+
+
+class ModelNormsTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.pred = predictions()
+        with mock.patch.object(T, "load_predictions", return_value=self.pred):
+            self.norms = T.build_model_norms("deney_x", self.tmp.name)
+
+    def test_rows_and_no_gender(self):
+        self.assertEqual((self.norms.tur == "cizim").sum(), len(self.pred))
+        self.assertEqual((self.norms.tur == "cift").sum(), self.pred.ogrenci.nunique())
+        self.assertNotIn("cinsiyet", self.norms.columns)
+
+    def test_groups_and_round_trip(self):
+        path = T.norms_path(self.tmp.name)
+        loaded = T.load_model_norms(path, "deney_x")
+        self.assertEqual(len(T.norm_group(loaded, "Primary", "Happiness")), 4 * 40)
+        self.assertEqual(len(T.norm_group(loaded, "Secondary")), 4 * 40)
+        t = T.with_task_fit(self.pred)
+        want = np.sort(t[(t.egitim == "Primary") & (t.duygu == "Sadness")].gorev_uyumu.values)
+        np.testing.assert_allclose(np.sort(T.norm_group(loaded, "Primary", "Sadness")), want)
+
+    def test_version_and_model_mismatch_raise(self):
+        path = T.norms_path(self.tmp.name)
+        with self.assertRaises(RuntimeError):
+            T.load_model_norms(path, "baska_deney")
+        with mock.patch.object(T, "MODEL_NORM_VERSION", 2), self.assertRaises(RuntimeError):
+            T.load_model_norms(path, "deney_x")
 
 
 if __name__ == "__main__":
