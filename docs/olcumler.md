@@ -22,9 +22,10 @@
 | | Ortalama çizgi kalınlığı | Distance transform ile iskelet boyunca kalınlık | Kalem baskısı/araç tipi |
 | | Bağlı bileşen sayısı | Maskedeki ayrı parçalar (çok küçükler hariç) | Ayrı öğe sayısı |
 
-## Uygulanan ölçümler (ölçüm sürümü 2)
+## Uygulanan ölçümler (ölçüm sürümü 3)
 
-Tablodaki bütün ölçümler uygulandı (sürüm 1: ilk dilim, doluluk, renk sayısı, koyu ton; sürüm 2: geri kalanlar).
+Tablodaki bütün ölçümler uygulandı (sürüm 1: ilk dilim, doluluk, renk sayısı, koyu ton; sürüm 2: geri kalanlar;
+sürüm 3: renklilik ve kenar yoğunluğunun çizim piksellerine göre halleri).
 Kod: `src/measurements/` (`mask.py`, `metrics.py`, `norms.py`), rapor `src/report.py`.
 Görüntüler 512×362; bütün ölçümler kenarlardan 4 piksel kırpılmış sayfa (504×354) üzerinde.
 Çizim yokken (boş maske) konum, doygunluk, koyu ton, boyama ve kalınlık tanımsızdır (`null`).
@@ -34,6 +35,7 @@ Görüntüler 512×362; bütün ölçümler kenarlardan 4 piksel kırpılmış s
   8 pikselden küçük parçalar ve piksellerinin %90'ı kenara 10 pikselden yakın parçalar (tarama izleri) atılır.
   Eşiklerin ölçüldüğü veriler `mask.py` başında. Maske 24 çizimlik kontrol sayfasıyla onaylandı (2026-10-19;
   `python -m src.measurements.mask_check`, Drive `maske_kontrol/`).
+
 Kompozisyon:
 - **Doluluk oranı** (`doluluk_orani`): maskedeki piksellerin sayfaya oranı.
 - **Ağırlık merkezi** (`agirlik_merkezi_x`, `agirlik_merkezi_y`): maske piksellerinin ortalama konumu, sayfaya göre
@@ -56,17 +58,26 @@ Renk:
   piksel, 0–1 (soğuk ton hiç yokken oran sonsuz olurdu). Sıcak: kırmızı, turuncu, sarı (345°–75°); soğuk: yeşil,
   camgöbeği, mavi (105°–255°); sarı-yeşil, mor ve pembe-eflatun ikisine de girmez. İkisi toplam 50 pikselden azsa
   tanımsız (karakalem; train'de %1,4).
-- **Renklilik** (`renklilik`): Hasler ve Süsstrunk (2003) ölçütü, bütün sayfa üzerinde: rg = R − G,
-  yb = (R + G)/2 − B; σ_rgyb + 0,3 μ_rgyb. Beyaz ya da gri sayfa 0. Yayımlanan tanım gibi bütün görüntüde
-  hesaplandığı için hem rengin canlılığını hem renkli alanın büyüklüğünü yansıtır (bkz. sınırlama 9).
+- **Renklilik** (`renklilik_cizim`, metin raporda "Renklilik"): Hasler ve Süsstrunk (2003) ölçütü,
+  rg = R − G, yb = (R + G)/2 − B; σ_rgyb + 0,3 μ_rgyb, **sadece maskedeki (çizim) piksellere uygulanır**.
+  Neden: ölçüt fotoğraflar için tanımlanmış ve bütün görüntüde hesaplanır. Çocuk çiziminde görüntünün çoğu boş
+  beyaz kağıttır; kağıt pikselleri ortalamayı ve yayılımı belirler, böylece değer "renk ne kadar canlı" sorusundan
+  çok "sayfanın ne kadarı renkli" sorusunu yanıtlar. Sayfa tabanlı hali train'de dolulukla Spearman 0,76 ilişkili
+  (sürüm 2), doluluğun tekrarı gibi okunuyordu. Maskeye uygulanınca kağıt hesaba girmez: aynı kırmızı küçük ya da
+  büyük alanda aynı değeri verir; siyah/gri kalem ≈ 0. Çizim yoksa tanımsız.
+- **Renklilik (sayfa)** (`renklilik`): aynı ölçüt bütün sayfa üzerinde (yayımlanan tanım). JSON'da ve normlarda
+  kıyas için duruyor, metin raporda yok. Beyaz ya da gri sayfa 0.
 - **Boyama oranı** (`boyama_orani`): maskeden 7 pikselden ince çizgiler morfolojik açmayla atılır, kalan kalın
   bölgeler "boyanmış alan" sayılır; oran = boyanmış alan / konturların kapladığı alan (maske + kapalı kontur
   içleri). Sadece kontur ≈ 0, içi boyanmış şekiller ≈ 1. Alan ağırlıklı: büyük bir boyalı zemin bandı oranı yükseltir.
 
 Çizgi ve yapı:
-- **Kenar yoğunluğu** (`kenar_yogunlugu`): gri tonlu sayfada Canny kenar dedektörü (sigma 1); maskenin 2 piksel
-  çevresi dışındaki kenarlar (kağıt dokusu, tarama izleri) sayılmaz; kenar piksellerinin sayfaya oranı. Metin
-  raporda "Detay (kenar yoğunluğu)" olarak.
+- **Kenar yoğunluğu** (`kenar_yogunlugu_cizim`, metin raporda "Detay (kenar yoğunluğu)"): gri tonlu sayfada
+  Canny kenar dedektörü (sigma 1); maskenin 2 piksel çevresi dışındaki kenarlar (kağıt dokusu, tarama izleri)
+  sayılmaz; kenar piksellerinin **çizim piksellerine** oranı. Çizimin büyüklüğünden bağımsız: ince çizgilerden
+  oluşan çizim yüksek, geniş düz boyama düşük. Çizim yoksa tanımsız.
+- **Kenar yoğunluğu (sayfa)** (`kenar_yogunlugu`): aynı kenar piksellerinin sayfaya oranı (tablodaki tanım).
+  JSON'da ve normlarda duruyor, metin raporda yok.
 - **Toplam çizgi uzunluğu** (`cizgi_uzunlugu`): maskenin iskeleti (skimage `skeletonize`), piksel sayısı.
 - **Ortalama çizgi kalınlığı** (`cizgi_kalinligi`): iskelet boyunca 2d − 1 (d: maskede kenara uzaklık, distance
   transform), piksel. Boyanmış alanlarda iskelet alanın ortasından geçer; değer alanın genişliğini ölçer.
@@ -94,7 +105,8 @@ Renk:
 - Rapor: `python -m src.report <görüntü yolu> [--grade N --task mutlu|uzgun]` → JSON + metin
   (Drive `raporlar/`). JSON modülden bağımsız: `modul`, `karsilastirma_grubu`, `olcumler`, `kalite`, `not`.
   JSON bütün ölçümleri (tablo sırasıyla, `grup` alanıyla) içerir; metin rapor sadece beşini, bu sırayla gösterir:
-  doluluk oranı, farklı renk sayısı, renklilik, koyu ton oranı, detay (kenar yoğunluğu).
+  doluluk oranı, farklı renk sayısı, renklilik (çizim pikselleri), koyu ton oranı, detay (kenar yoğunluğu, çizim
+  pikseli başına).
   Rapor train'deki bir çizim içinse "çizim karşılaştırma grubunun içinde" notu düşer.
 
 ## Maske sınırlamaları
@@ -130,7 +142,21 @@ Sürüm 2 ölçümlerinin sınırlamaları:
    halesiyle birlikte) boyanmış alan sayılır; seyrek tarama (sınırlama 2) boyanmamış sayılır.
 8. **Kenar yoğunluğu doku da ölçer.** Pastel ve kuru boya dolgularının pürüzlü dokusu çok kenar üretir; değer çizilen
    ayrıntı ile boyama dokusunu birlikte ölçer.
-9. **Renklilik ve kenar yoğunluğu dolulukla güçlü ilişkili** (train, Spearman): kenar yoğunluğu 0,87, renklilik 0,76;
-   ikisi de sayfaya göre tanımlı, çok çizilen sayfada büyür. Çizim piksellerine göre tanımlansalar ilişki düşer
-   (600 çizimlik örnekte: çizim pikseli başına kenar −0,46, çizim piksellerinde renklilik 0,29). Tablodaki tanımlar
-   korundu; metin raporda bu üç ölçüm birbirinden bağımsız bilgi gibi okunmamalı.
+9. **Sayfa tabanlı renklilik ve kenar yoğunluğu dolulukla güçlü ilişkili** (train, Spearman): kenar yoğunluğu
+   0,87, renklilik 0,76; çok çizilen sayfada büyürler. Bu yüzden sürüm 3'te metin raporda çizim piksellerine göre
+   halleri kullanılır; sayfa tabanlı halleri JSON'da ve normlarda kalır. Metin rapordaki beş ölçüm ve boyama oranı
+   arasındaki Spearman korelasyonları (train, 7842 çizim, sürüm 3):
+
+   | | doluluk | renk sayısı | renklilik | koyu ton | detay | boyama |
+   |---|---|---|---|---|---|---|
+   | doluluk | 1 | 0,15 | 0,28 | −0,07 | −0,42 | 0,47 |
+   | renk sayısı | 0,15 | 1 | 0,24 | −0,02 | 0,03 | −0,05 |
+   | renklilik | 0,28 | 0,24 | 1 | −0,16 | −0,56 | 0,50 |
+   | koyu ton | −0,07 | −0,02 | −0,16 | 1 | 0,06 | −0,14 |
+   | detay | −0,42 | 0,03 | −0,56 | 0,06 | 1 | −0,67 |
+   | boyama | 0,47 | −0,05 | 0,50 | −0,14 | −0,67 | 1 |
+
+10. **Detay (çizim pikseli başına kenar) çizgi kalınlığını da ölçer.** Kenar sayısı çizimin konturuyla, payda
+    alanıyla büyür: ince çizgilerden oluşan çizim yüksek, geniş boyama düşük değer alır. Boyama oranıyla −0,67,
+    ortalama çizgi kalınlığıyla −0,75 ilişkili (train). Değer "çok ayrıntı" kadar "ince çizgi / az boyama" da
+    demektir.

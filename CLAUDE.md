@@ -98,7 +98,7 @@
   `MEASUREMENT_VERSION`),
   `norms.py` (train normları, yüzdelik, kuyruk payları), `mask_check.py` (24 çizimlik görsel kontrol sayfası).
 - `src/report.py`: bir çizim için betimleyici rapor (JSON + metin); JSON'da bütün ölçümler, metinde sadece
-  `TEXT_MEASURES` (doluluk, renk sayısı, renklilik, koyu ton, detay = kenar yoğunluğu, bu sırayla).
+  `TEXT_MEASURES` (doluluk, renk sayısı, renklilik, koyu ton, detay = kenar yoğunluğu; son ikisi çizim pikselleriyle).
   ⚠ akranların %5'inden azı bu kadar uçtaysa; grup 100'den küçükse (`MIN_GROUP`) ⚠ yerine "grup küçük" notu.
 - `notebooks/colab.ipynb`: güncel Colab notebook'u; repoyu clone/pull eder, sadece `src/` fonksiyonlarını çağırır.
 - `notebooks/grad_proj.ipynb`: arşiv (ilk keşif ve denemeler). Çıktıları eski sonuçların kaynağı, silinmemeli
@@ -130,7 +130,10 @@
 - Rapor betimleyicidir, tanı dili içermez. Bütün çizimleri aynı yönde etkileyen maske hataları kabul (normlar aynı
   maskeyle); bazı çizimleri etkileyenler raporda kalite bayrağıyla görünür olmalı.
 - Sürüm 2 (2026-10-19): `docs/olcumler.md` tablosundaki bütün ölçümler JSON'da ve normlarda; metin rapor beş ölçüm.
-  Renklilik ve kenar yoğunluğu sayfaya göre tanımlı, dolulukla güçlü ilişkili (Spearman 0,76 / 0,87; belgelendi).
+- Sürüm 3 (2026-10-21): metin rapordaki renklilik (Hasler–Süsstrunk) ve detay (kenar yoğunluğu) çizim piksellerine
+  göre (`renklilik_cizim`, `kenar_yogunlugu_cizim`); sayfa tabanlı halleri (`renklilik`, `kenar_yogunlugu`, dolulukla
+  Spearman 0,76 / 0,87) JSON'da ve normlarda kalır. Detay boyama oranıyla −0,67, çizgi kalınlığıyla −0,75 ilişkili;
+  |0,7|'yi geçerse detay için başka tanım konuşulacaktı (geçmedi, sınırda).
 - Maske ya da ölçüm tanımı değişirse `MEASUREMENT_VERSION` artır, normları yeniden hesapla.
 
 ## Bilinen sonuçlar (2026-10-15)

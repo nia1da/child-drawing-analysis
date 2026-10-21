@@ -27,9 +27,9 @@ MIN_GROUP = 100  # bundan küçük karşılaştırma grubunda %5'lik kuyruk birk
 TEXT_MEASURES = {
     "doluluk_orani": None,
     "renk_sayisi": None,
-    "renklilik": "Renklilik",
+    "renklilik_cizim": "Renklilik",
     "koyu_ton_orani": None,
-    "kenar_yogunlugu": "Detay (kenar yoğunluğu)",
+    "kenar_yogunlugu_cizim": "Detay (kenar yoğunluğu)",
 }
 FAINT_MESSAGE = "soluk renk kullanımı: ölçümler eksik olabilir"
 NOTE = "Bu rapor çizimi betimler ve akranlarıyla karşılaştırır; tanı ya da yorum içermez. Yorum uzmana aittir."
@@ -82,7 +82,7 @@ def _number(x, key):
         return "—"
     if key in INTEGER_MEASURES:
         return str(x)
-    return (f"{x:.1f}" if key == "renklilik" else f"{x:.3f}").replace(".", ",")
+    return (f"{x:.1f}" if key.startswith("renklilik") else f"{x:.3f}").replace(".", ",")
 
 
 def format_text(report):

@@ -174,6 +174,18 @@ class ColorTest(unittest.TestCase):
         self.assertGreater(X.colorfulness(cropped(large)), X.colorfulness(cropped(small)))
         self.assertGreater(X.colorfulness(cropped(small)), 10)
 
+    def test_drawing_colorfulness_independent_of_size(self):
+        # Çizim piksellerinde: aynı renk, küçük ya da büyük alan, aynı değer; siyah 0; çizim yoksa tanımsız
+        small, large, black = page(), page(), page()
+        small[100:150, 100:150] = (220, 30, 30)
+        large[50:300, 50:450] = (220, 30, 30)
+        black[100:150, 100:150] = 0
+        v_small, v_large = measured(small)["renklilik_cizim"], measured(large)["renklilik_cizim"]
+        self.assertGreater(v_small, 50)
+        self.assertAlmostEqual(v_small, v_large, delta=0.1 * v_large)
+        self.assertAlmostEqual(measured(black)["renklilik_cizim"], 0.0, delta=1)
+        self.assertIsNone(measured(page())["renklilik_cizim"])
+
     def test_painted_ratio_outline_vs_filled(self):
         outline, filled = page(), page()
         outline[100:250, 100:350] = (30, 60, 220)
@@ -200,11 +212,23 @@ class StructureTest(unittest.TestCase):
 
     def test_edge_density(self):
         self.assertEqual(measured(page())["kenar_yogunlugu"], 0.0)
+        self.assertIsNone(measured(page())["kenar_yogunlugu_cizim"])
         arr = page()
         arr[100:200, 100:300] = 0
-        perimeter = 2 * (100 + 200) / ((W - 2 * M.CROP) * (H - 2 * M.CROP))
+        v = measured(arr)
+        perimeter = 2 * (100 + 200)
         # Canny keskin geçişi yer yer 2 piksel işaretler: çevre ile iki katı arasında
-        self.assertTrue(perimeter <= measured(arr)["kenar_yogunlugu"] <= 2 * perimeter)
+        page_area = (W - 2 * M.CROP) * (H - 2 * M.CROP)
+        self.assertTrue(perimeter / page_area <= v["kenar_yogunlugu"] <= 2 * perimeter / page_area)
+        self.assertTrue(perimeter / (100 * 200) <= v["kenar_yogunlugu_cizim"] <= 2 * perimeter / (100 * 200))
+
+    def test_drawing_edge_density_higher_for_lines_than_fills(self):
+        # Aynı alan: ince çizgilerden oluşan şekil, düz dolgudan çok daha fazla kenar/çizim pikseli
+        lines, fill = page(), page()
+        for y in range(100, 300, 10):
+            lines[y:y + 3, 100:400] = 0
+        fill[100:160, 100:400] = 0
+        self.assertGreater(measured(lines)["kenar_yogunlugu_cizim"], 5 * measured(fill)["kenar_yogunlugu_cizim"])
 
     def test_all_measures_present_in_order(self):
         arr = page()
@@ -231,6 +255,8 @@ def synthetic_norms(n, seed=0):
     norms["renk_sayisi"] = rng.integers(3, 7, n)
     norms["koyu_ton_orani"] = rng.uniform(0.0, 0.1, n)
     norms["renklilik"] = rng.uniform(20, 60, n)
+    norms["renklilik_cizim"] = rng.uniform(40, 120, n)
+    norms["kenar_yogunlugu_cizim"] = rng.uniform(0.05, 0.4, n)
     return norms.assign(dosya=[f"x-{i}.jpg" for i in range(n)], sinif=3, duygu="Happiness",
                         surum=MEASUREMENT_VERSION)
 
@@ -251,8 +277,9 @@ class ReportTest(unittest.TestCase):
         r = self.report(synthetic_norms(n))
         self.assertEqual([m["kimlik"] for m in r["olcumler"]], list(MEASURES))  # JSON'da hepsi
         flags = {m["kimlik"]: m["aralik_disi"] for m in r["olcumler"]}
-        self.assertEqual({k: flags[k] for k in ["doluluk_orani", "renk_sayisi", "koyu_ton_orani", "renklilik"]},
-                         {"doluluk_orani": "ust", "renk_sayisi": "alt", "koyu_ton_orani": "ust", "renklilik": "alt"})
+        expected = {"doluluk_orani": "ust", "renk_sayisi": "alt", "koyu_ton_orani": "ust", "renklilik": "alt",
+                    "renklilik_cizim": "alt", "kenar_yogunlugu_cizim": "alt"}
+        self.assertEqual({k: flags[k] for k in expected}, expected)
         self.assertEqual(r["karsilastirma_grubu"],
                          {"sinif": 3, "gorev": "mutlu", "n": n, "kaynak": "KIDO train", "kucuk": False})
         text = format_text(r)
@@ -270,8 +297,12 @@ class ReportTest(unittest.TestCase):
         positions = [text.find(f"  {name} ") for name in names]
         self.assertTrue(all(p >= 0 for p in positions), positions)
         self.assertEqual(positions, sorted(positions))
-        for hidden in ["Ağırlık merkezi", "Boyama oranı", "Bağlı bileşen", "Renk entropisi", "Bölge doluluğu"]:
+        for hidden in ["Ağırlık merkezi", "Boyama oranı", "Bağlı bileşen", "Renk entropisi", "Bölge doluluğu",
+                       "sayfa"]:
             self.assertNotIn(hidden, text)
+        r = self.report(synthetic_norms(200))
+        shown = {m["kimlik"]: m for m in r["olcumler"]}
+        self.assertIn(f"{shown['renklilik_cizim']['deger']:.1f}".replace(".", ","), text)
 
     def test_small_group_note_instead_of_flags(self):
         from src.report import MIN_GROUP, format_text

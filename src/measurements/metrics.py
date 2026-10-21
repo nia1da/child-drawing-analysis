@@ -13,6 +13,8 @@ Parametreler KIDO'da kontrol edildi (2026-10-19):
   sayılır; oranın paydası maskenin delikleri doldurulmuş hali (kontur içleri dahil).
 - Kenar yoğunluğu: gri tonlu sayfada Canny (sigma CANNY_SIGMA); sadece maskenin EDGE_HALO piksel çevresindeki
   kenarlar sayılır, kağıt dokusu ve tarama izleri dışarıda kalsın.
+- Renklilik ve kenar yoğunluğu iki şekilde: çizim piksellerine göre (_cizim, metin raporda) ve sayfaya göre
+  (tablodaki tanım). Sayfaya göre olanlar dolulukla güçlü ilişkili (train, Spearman 0,76 / 0,87; sürüm 2).
 """
 import numpy as np
 from scipy import ndimage
@@ -21,7 +23,7 @@ from skimage.morphology import skeletonize
 
 from .mask import EIGHT, drawing_mask, faint_color_ratio, FAINT_FLAG, load_drawing, to_hsv
 
-MEASUREMENT_VERSION = 2  # maske ya da ölçüm tanımı değişirse artır; normlar yeniden hesaplanmalı
+MEASUREMENT_VERSION = 3  # maske ya da ölçüm tanımı değişirse artır; normlar yeniden hesaplanmalı
 SAT_S, SAT_V = 60, 60  # doygun piksel: renk ölçümleri için
 HUE_BINS = 12
 HUE_MIN_SHARE, HUE_MIN_PIXELS = 0.03, 50
@@ -46,9 +48,11 @@ MEASURE_INFO = {
     "ortalama_doygunluk": ("Renk", "Ortalama doygunluk"),
     "koyu_ton_orani": ("Renk", "Koyu ton oranı"),
     "sicak_ton_payi": ("Renk", "Sıcak ton payı"),
-    "renklilik": ("Renk", "Renklilik (Hasler–Süsstrunk)"),
+    "renklilik_cizim": ("Renk", "Renklilik (Hasler–Süsstrunk, çizim pikselleri)"),
+    "renklilik": ("Renk", "Renklilik (Hasler–Süsstrunk, sayfa)"),
     "boyama_orani": ("Renk", "Boyama oranı"),
-    "kenar_yogunlugu": ("Çizgi ve yapı", "Kenar yoğunluğu"),
+    "kenar_yogunlugu_cizim": ("Çizgi ve yapı", "Kenar yoğunluğu (çizim pikseli başına)"),
+    "kenar_yogunlugu": ("Çizgi ve yapı", "Kenar yoğunluğu (sayfa)"),
     "cizgi_uzunlugu": ("Çizgi ve yapı", "Toplam çizgi uzunluğu"),
     "cizgi_kalinligi": ("Çizgi ve yapı", "Ortalama çizgi kalınlığı"),
     "bilesen_sayisi": ("Çizgi ve yapı", "Bağlı bileşen sayısı"),
@@ -144,12 +148,18 @@ def dark_tone_ratio(hsv, mask):
     return float((hsv[..., 2][mask] < DARK_TONE_V).mean())
 
 
-def colorfulness(img):
-    """Hasler ve Süsstrunk (2003) renklilik ölçütü, bütün sayfa üzerinde: σ_rgyb + 0,3 μ_rgyb.
+def colorfulness(img, mask=None):
+    """Hasler ve Süsstrunk (2003) renklilik ölçütü: σ_rgyb + 0,3 μ_rgyb.
 
-    Beyaz kağıt 0'a yakın; değer hem rengin canlılığını hem renkli alanın büyüklüğünü yansıtır.
+    mask verilirse sadece çizim pikselleri üzerinde (çizim yoksa None): kağıt hesaba girmez, değer rengin
+    canlılığını ölçer, çizimin büyüklüğünü değil. mask yoksa bütün sayfa (yayımlanan tanım): beyaz kağıt 0'a
+    yakın; değer hem canlılığı hem renkli alanın büyüklüğünü yansıtır.
     """
     rgb = np.asarray(img, float)
+    if mask is not None:
+        if not mask.any():
+            return None
+        rgb = rgb[mask]
     r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
     rg, yb = r - g, 0.5 * (r + g) - b
     return float(np.hypot(rg.std(), yb.std()) + 0.3 * np.hypot(rg.mean(), yb.mean()))
@@ -173,13 +183,18 @@ def painted_ratio(mask):
 
 # Çizgi ve yapı
 
-def edge_density(img, mask):
-    """Canny kenar piksellerinin sayfaya oranı; sadece maskenin yakınındaki kenarlar (kağıt dokusu sayılmaz)."""
-    if not mask.any():
-        return 0.0
+def edge_pixels(img, mask):
+    """Canny kenar pikselleri; sadece maskenin yakınındakiler (kağıt dokusu, tarama izleri sayılmaz)."""
     gray = np.asarray(img.convert("L"), float) / 255
     near = ndimage.binary_dilation(mask, iterations=EDGE_HALO)
-    return float((canny(gray, sigma=CANNY_SIGMA) & near).mean())
+    return canny(gray, sigma=CANNY_SIGMA) & near
+
+
+def edge_density(edges, mask):
+    """(çizim pikseli başına, sayfaya göre) kenar yoğunluğu. Çizim yoksa (None, 0)."""
+    if not mask.any():
+        return None, 0.0
+    return float(edges.sum() / mask.sum()), float(edges.mean())
 
 
 def line_measures(mask):
@@ -207,6 +222,7 @@ def measure_image(img):
     cx, cy = center_of_mass(mask)
     length, thickness = line_measures(mask)
     faint = faint_color_ratio(hsv, mask)
+    edges_per_pixel, edges_per_page = edge_density(edge_pixels(img, mask) if mask.any() else None, mask)
     values = {
         "doluluk_orani": fill_ratio(mask),
         "agirlik_merkezi_x": cx,
@@ -218,9 +234,11 @@ def measure_image(img):
         "ortalama_doygunluk": mean_saturation(hsv, mask),
         "koyu_ton_orani": dark_tone_ratio(hsv, mask),
         "sicak_ton_payi": warm_share(counts),
+        "renklilik_cizim": colorfulness(img, mask),
         "renklilik": colorfulness(img),
         "boyama_orani": painted_ratio(mask),
-        "kenar_yogunlugu": edge_density(img, mask),
+        "kenar_yogunlugu_cizim": edges_per_pixel,
+        "kenar_yogunlugu": edges_per_page,
         "cizgi_uzunlugu": length,
         "cizgi_kalinligi": thickness,
         "bilesen_sayisi": component_count(mask),
