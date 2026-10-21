@@ -1,6 +1,6 @@
 # Plan: görev uyumu ve mutlu–üzgün ayrışma (aşama 3'ün parçası)
 
-Durum: taslak, 2026-10-21; denetleyici önerileriyle güncellendi. Kod yazılmadı. Hedef rapor satırları
+Durum: onaylandı (2026-10-21; denetleyici önerileri işlendi). Hedef rapor satırları
 (`docs/rapor_taslagi.md`): "Görev uyumu" (her çizim) ve "Mutlu–üzgün ayrışma" (iki çizim birlikte).
 
 ## Sabitler (değişmez, CLAUDE.md)
@@ -40,9 +40,22 @@ dayanır) burada geçerli değil; küçük grubun sorunu yüzdeliğin örnekleme
    %72'si 3. ve 4. sınıf; seviye içinde skorda sınıf eğilimi varsa 1. sınıf sistematik olarak düşük yüzdelik alır.
 2. **Sınıf x görev**, küçük grup notuyla: grup raporun ölçüm bölümüyle aynı, ama yüzdelikler oynak (44 çizimde bir
    sıra ≈ 2,3 yüzdelik puanı).
-Karar kuralı: adım 2'de seviye içinde sınıfa göre belirgin eğilim yoksa (1 ve 2), değilse (2) ya da eğilimi gösteren
-bir düzeltme önerilir. Seçenek 1 seçilirse taslaktaki "3. sınıf normunun" ifadesi "ilkokul (1–4. sınıf) normunun"
-olur (taslak değişikliği kullanıcı kararı); metin raporda ve JSON `karsilastirma_grubu`'nda grup ve n açıkça yazılır.
+**Karar ölçütü** (2026-10-21'de, val tahminleri üretilmeden önce yazıldı; analizden sonra değiştirilmez):
+- Hücreler: görev uyumu için 4 (ilkokul / ortaokul x mutlu / üzgün, çizim başına bir değer), ayrışma için 2
+  (ilkokul / ortaokul, öğrenci başına bir `d`). Toplam 6 karşılaştırma.
+- **İstatistiksel ölçüt:** her hücrede sınıf düzeyleri arasında Kruskal–Wallis testi; anlamlı: p < 0,05 / 6 ≈ 0,0083
+  (Bonferroni).
+- **Pratik ölçüt:** her hücrede, her sınıfın değerlerinin seviye havuzundaki yüzdeliklerinin (orta sıra) medyanı;
+  bir sınıfın medyanı 50'den en az 10 puan sapıyorsa belirgin.
+- **Belirgin eğilim:** herhangi bir hücrede iki ölçüt birden sağlanırsa.
+- Karar: belirgin eğilim yoksa seçenek 1 (eğitim seviyesi x görev); varsa seçenek 2 (sınıf x görev, "grup küçük"
+  notuyla). Seviye içi düzeltme (örn. sınıfa göre kaydırma) yapılmaz.
+- `d` için skor: olasılık farkı. Val çiftlerinin %25'inden fazlasında iki çizimin skoru da aynı uçta yığılıyorsa
+  (iki `p` de < 0,1 ya da iki `p` de > 0,9) logit farkı kullanılır. Bu seçim gruplama ölçütünden önce yapılır.
+- Sonuç (test istatistikleri, medyanlar, karar) `docs/olcumler.md`'ye ve `docs/kararlar.md`'ye yazılır.
+
+Seçenek 1 seçilirse metin raporda ve JSON `karsilastirma_grubu`'nda grup ve n açıkça yazılır ("ilkokul (1–4. sınıf)
+normu, n=346"); ölçüm bölümünün sınıf normuyla karıştırılmasın.
 
 ## ⚠ ve uyarı kuralları
 - Görev uyumu ve ayrışmada ⚠ **verilmez**; sadece yüzdelik ve sınırlama notu. Sebep: %5 kuralı modelin hatasını

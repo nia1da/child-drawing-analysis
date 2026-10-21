@@ -22,12 +22,12 @@ Hedef rapor: `docs/rapor_taslagi.md`. Durum 2026-10-21 itibarıyla.
   - veri denetimi notları yazılı bir belge olarak yok.
 - **1. İnce dilim:** 2026-10-19'da bitti: maske, doluluk, renk sayısı, koyu ton, train normları, JSON + metin rapor.
 - **2. Parametreler ve normlar:** Bütün ölçümler, normlar (ölçüm sürümü 3), maske kontrol sayfası, maske
-  sınırlamaları, kalite kuralları (soluk renk, küçük grup, küçük çizim) yapıldı. Açık olan:
-  - metin rapordaki "detay" tanımı (kenar yoğunluğu çizgi inceliğini ölçüyor; öneri: toplam çizgi uzunluğu,
-    karar bekliyor);
-  - küçük çizim kuralı commit edilmedi.
+  sınırlamaları, kalite kuralları (soluk renk, küçük grup, küçük çizim) yapıldı. Küçük çizim kümesi kuralla
+  belirlendi ve commit edildi (2026-10-21). Açık olan:
+  - metin rapordaki "Detay" yerine "Çizgi miktarı" (toplam çizgi uzunluğu, iskelet): karar verildi (2026-10-21,
+    `docs/kararlar.md`), uygulanmadı.
 - **3. Çizim yaşı ve görev uyumu:** Duygu sınıflandırıcısı (convnext_tiny, val F1 0.8095) bu aşamanın **erken yapılmış
   bir parçası**; 2026-10-19'da donduruldu. Henüz yapılmayanlar:
   - sınıf düzeyi tahmini;
-  - görev uyumu ve mutlu–üzgün ayrışmanın rapora bağlanması;
+  - görev uyumu ve mutlu–üzgün ayrışmanın rapora bağlanması (plan onaylı: `docs/plan_gorev_uyumu.md`);
   - bunların test metrikleri.

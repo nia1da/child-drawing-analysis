@@ -1,6 +1,7 @@
 # Rapor taslağı
 
-Hedef rapor (örnek, uydurma değerlerle). Aşamalar: `docs/plan.md`.
+Hedef rapor (örnek, uydurma değerlerle). Aşamalar: `docs/plan.md`. Görev uyumu ve ayrışmada karşılaştırma grubu
+(eğitim seviyesi ya da sınıf) val analizinden sonra kesinleşir (`docs/plan_gorev_uyumu.md`); örnekte seviye.
 
 ```
 ═══════════════════════════════════════════════════════════════
@@ -20,7 +21,8 @@ Kayıt: C-0142 | Sınıf: 3 | Cinsiyet: K | Ziyaret: 2 (08.10.2026)
   Gelişimsel konum: tahmini sınıf 3,4 (gerçek 3) → tipik aralıkta
   Özellikler (3. sınıf, mutluluk normu, yüzdelik):
     Doluluk 58 | Renk sayısı 71 | Renklilik 64 | Koyu ton 22 | Çizgi miktarı 49
-  Görev uyumu: tipik mutluluk çizimlerine benzerlik %83
+  Görev uyumu (mutlu): ilkokul mutlu normunun 71. yüzdelik dilimi
+    (modelce KIDO mutlu çizimlerine benzerlik; duygu durumu değil)
   Çağrışım (benzer çizimleri yapan akranların açıklamaları):
     Aileyle birlikte olmak %54 | Yemek/sofra %31 | Oyun %9
 
@@ -29,11 +31,15 @@ Kayıt: C-0142 | Sınıf: 3 | Cinsiyet: K | Ziyaret: 2 (08.10.2026)
   Gelişimsel konum: tahmini sınıf 2,1 (gerçek 3) → tipik aralıkta
   Özellikler (3. sınıf, üzüntü normu, yüzdelik):
     Doluluk 4 ⚠ | Renk sayısı 9 | Renklilik 12 | Koyu ton 61 | Çizgi miktarı 6 ⚠
-  Görev uyumu: tipik üzüntü çizimlerine benzerlik %77
+  Görev uyumu (üzgün): ilkokul üzgün normunun 58. yüzdelik dilimi
   Çağrışım: Yalnızlık %38 | Dışlanma %21 | Kayıp %14
 
   ── İki çizim birlikte ───────────────────────────────────────
-  Mutlu–üzgün ayrışma: 3. sınıf normunun 66. yüzdelik dilimi
+  Mutlu–üzgün ayrışma: ilkokul (1–4. sınıf, n=346) normunun 66. dilimi
+    (model iki çizimi görevlerine uygun yönde sıralıyor)
+  Sınırlama: model ilkokul erkek çocukların mutlu çizimlerini daha sık "üzgün" görevine
+    benzetir; görev uyumu ve ayrışma bu grupta daha düşük çıkabilir. Normlar: KIDO val.
+    Görev uyumu ve ayrışmada ⚠ verilmez.
 
   ── Açıklama metinleri ───────────────────────────────────────
   Kelime sayısı: 14 / 6 | Duygu kelimesi: 2 / 1
