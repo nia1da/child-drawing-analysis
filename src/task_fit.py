@@ -211,6 +211,7 @@ def _load_model(experiment, output_dir):
     return model.eval(), size
 
 
+@lru_cache(maxsize=64)  # rapor ve çift raporu aynı görüntüyü iki kez skorlamasın
 def score_image(path, experiment=REFERENCE, output_dir=PATHS["output"]):
     """Modelin "üzgün" olasılığı (p); değerlendirmedeki dönüşümle (beyaz pad ile kare). CPU'da da çalışır."""
     import torch
@@ -247,18 +248,24 @@ def failed_section(reason, experiment=REFERENCE):
     return {"durum": "çalışmadı", "neden": str(reason), "model": experiment, "notlar": [], "sinirlamalar": []}
 
 
-def separation_section(p_happy, p_sad, level, norms, experiment=REFERENCE):
+def separation_section(p_happy, p_sad, level, norms, names=(), experiment=REFERENCE):
     """Aynı çocuğun iki çizimi: d = s(üzgün çizim) - s(mutlu çizim); skor türü normlardaki `ayrisma_skoru`."""
     score = norms.ayrisma_skoru.iloc[0]
     d = float(p_sad - p_happy) if score == "d_olasilik" else float(logit(p_sad) - logit(p_happy))
     group = norm_group(norms, level)
     pct = percentile(group, d)
+    splits = [kido_split(n) for n in names]
+    notes = []
+    if "train" in splits:
+        notes.append("Çizimlerden en az biri modelin eğitim verisinde; skor iyimser olabilir.")
+    elif splits and all(sp == SPLIT for sp in splits):
+        notes.append("Çizimler karşılaştırma grubunun içinde (KIDO val).")
     return {"durum": "tamam", "model": experiment, "norm_surum": MODEL_NORM_VERSION, "skor": score,
             "d": round(d, 3), "yon": "uygun" if d > 0 else "ters",
             "yuzdelik": None if pct is None else round(pct, 1),
             "karsilastirma_grubu": {"seviye": level, "ad": LEVEL_NAMES[level], "n": int(len(group)),
                                     "kaynak": "KIDO val"},
-            "sinirlamalar": LIMITATIONS}
+            "notlar": notes, "sinirlamalar": LIMITATIONS}
 
 
 def describe(pred):

@@ -201,6 +201,16 @@ class ReportModelTest(unittest.TestCase):
         self.assertIn("tersi yönünde sıralıyor", format_pair_text(bad))
         self.assertEqual(good["sinirlamalar"], T.LIMITATIONS)
 
+    def test_pair_notes_and_missing_norms(self):
+        from src.report import build_pair_report, format_pair_text
+        for splits, word in [(["train", "val"], "eğitim verisinde"), (["val", "val"], "grubunun içinde")]:
+            with mock.patch.object(T, "kido_split", side_effect=splits):
+                a = build_pair_report(self.happy, self.sad, self.model_norms, p_happy=0.1, p_sad=0.9)["ayrisma"]
+            self.assertTrue(any(word in n for n in a["notlar"]), splits)
+        pair = build_pair_report(self.happy, self.sad, None, p_happy=0.1, p_sad=0.9)
+        self.assertEqual(pair["ayrisma"]["durum"], "çalışmadı")
+        self.assertIn("çalışmadı", format_pair_text(pair))
+
     def test_pair_report_checks_student_and_order(self):
         from src.report import build_pair_report
         other = os.path.join(self.tmp.name, "101-3B-2-F-S.jpg")

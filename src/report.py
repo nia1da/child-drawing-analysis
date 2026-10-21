@@ -155,9 +155,11 @@ def build_pair_report(happy_path, sad_path, model_norms, p_happy=None, p_sad=Non
     if task_from_filename(names[0]) != "Happiness" or task_from_filename(names[1]) != "Sadness":
         raise ValueError("Sırayla bir mutlu, bir üzgün çizim ver")
     try:
+        if model_norms is None:
+            raise RuntimeError("model normları yok")
         p_happy = task_fit.score_image(happy_path) if p_happy is None else p_happy
         p_sad = task_fit.score_image(sad_path) if p_sad is None else p_sad
-        sep = task_fit.separation_section(p_happy, p_sad, task_fit.level_from_grade(grades.pop()), model_norms)
+        sep = task_fit.separation_section(p_happy, p_sad, task_fit.level_from_grade(grades.pop()), model_norms, names)
     except Exception as e:
         sep = task_fit.failed_section(f"{type(e).__name__}: {e}")
     return {"modul": "cizim_cift", "kaynak": {"dosyalar": names}, "ayrisma": sep, "not": NOTE}
@@ -247,6 +249,7 @@ def format_pair_text(pair):
              f"  Karşılaştırma grubu: {g['ad']} normu, n={g['n']} ({g['kaynak']})"]
     if a["yon"] == "ters":
         lines.append("  Model iki çizimi görevlerinin tersi yönünde sıralıyor.")
+    lines += [f"  Not: {n}" for n in a["notlar"]]
     return "\n".join(lines + limitation_lines(a) + ["", pair["not"]])
 
 
@@ -298,8 +301,6 @@ if __name__ == "__main__":
     if len(a.paths) == 2:
         if a.grade or a.task:
             p.error("iki görüntüde --grade / --task kullanılmaz (KIDO dosya adlarından okunur)")
-        if model_norms is None:
-            p.error("ayrışma için model normları gerekli")
     for path in a.paths:
         r = build_report(path, a.grade, TASK_ARGS.get(a.task), model_norms=model_norms)
         paths = save(r, a.out)
