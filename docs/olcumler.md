@@ -234,3 +234,36 @@ tamamlanacak (tanım, sınırlamalar); şimdilik adım 2'nin sonuçları.
   de). Üst yarıdaki yüzdelik farkları (50. ile 95. dilim) hücreye göre 0,031–0,056'lık olasılık farkına dayanıyor; label smoothing
   0,1 skorları 0,95 civarında topluyor. Mutlu çizimlerin %53–55'inde, üzgün çizimlerin %55–62'sinde görev uyumu
   0,9'un üstünde.
+- **Sunum kararı (2026-10-21):** görev uyumu tam yüzdelik olarak verilir, kaba bant yok; her raporda yığılma notu
+  durur: "Üst dilimlerde skorlar birbirine çok yakın (50.–95. dilim arası 0,03–0,06 olasılık farkı); küçük yüzdelik
+  farkları anlamlı okunmamalı." Yüzdelik monoton dönüşümlerden etkilenmez; olasılık / logit seçimi görev uyumu
+  yüzdeliğini değiştirmez.
+- **Ayrışma `d` dağılımı (val, olasılık farkı):** `d` görev uyumundan farklı olarak geniş yayılıyor, aynı yığılma
+  sorunu yok. İlkokul (n=346) 5 / 25 / 50 / 75 / 95. dilim: −0,291 / 0,110 / 0,703 / 0,875 / 0,914; ortaokul (n=347):
+  −0,188 / 0,218 / 0,745 / 0,876 / 0,916. `d < 0` olan çiftler ilkokulda %15,6, ortaokulda %11,5. Üst uçta (75. dilimden
+  sonra) `d` label smoothing yüzünden ≈ 0,92'de tavan yapar; orada da küçük fark yorumlanmaz, aynı not geçerli.
+
+### Tanım ve kullanım (rapora girmeden önce)
+- **Ne ölçer:** modelin bu çizimi KIDO'da hangi göreve çizilmiş çizimlere benzettiği. Çocuğun duygu durumunu, görevi
+  yapıp yapamadığını ya da bir klinik durumu göstermez.
+- **Görev uyumu (tek çizim):** görev dosya adından ya da `--task`'tan; yüzdelik, eğitim seviyesi x görev val normunda
+  (orta sıra yüzdelik, `norms.percentile` ile aynı). Karşılaştırma grubu ve n JSON'da ve metinde yazılır
+  ("ilkokul (1–4. sınıf) mutlu normu, n=346"); ölçüm bölümünün sınıf normuyla karıştırılmaz.
+- **Ayrışma (iki çizim):** aynı çocuğun mutlu ve üzgün çizimi birlikte verilirse `d` ve yüzdeliği; `d < 0` metinde
+  "model iki çizimi görevlerinin tersi yönünde sıralıyor" olarak yazılır. Tek çizimde ayrışma hesaplanmaz.
+- **⚠ verilmez**, uyarı özetine ve görüşme önerisi kurallarına girmez (`docs/kararlar.md`, 2026-10-21).
+
+### Sınırlamalar (her raporda aynı, koşulsuz)
+1. Skor çocuğun ruh hali değil; modelin görev benzerliğidir.
+2. Norm kaynağı val: model ve ayar seçimi val ile yapıldığı için yüzdelikler hafif iyimser olabilir. Payı test
+   çizimlerinin val normlarındaki dağılımıyla ölçülecek (plan adım 6).
+3. Model ilkokul erkek çocukların mutlu çizimlerini daha sık "üzgün" görevine benzetir; bu gruptaki çocuklarda düşük
+   görev uyumu ve düşük ayrışma daha sık beklenir. Not herkese aynı gösterilir, cinsiyete göre koşullu değildir.
+   Sayı: 448px modelde test %33,7; 320px referans model için adım 6'da güncellenecek.
+4. Seyrek ya da az renkli çizimlerde görev uyumu düşebilir; doluluk ve renk sayısıyla birlikte okunmalı.
+5. Üst dilimlerde skorlar birbirine çok yakın (yukarıdaki yığılma notu).
+6. Norm grubu seçimi sınırda kaldı: ortaokul üzgün hücresinde sınıf eğilimi düzeltmesiz anlamlıydı (p 0,030); eğitim
+   seviyesi normunda ortaokul 7. sınıf çizimleri daha düşük, 8. sınıf daha yüksek yüzdelik alabilir.
+7. Normlar KIDO'dan (Şanlıurfa, 1–8. sınıf); başka bir örneklemde dağılım farklı olabilir.
+8. Test doğruluğu (AUC, `d > 0` oranı, alt gruplar) henüz yok; adım 6'da "bu ölçümün doğruluğu" olarak eklenecek.
+   Çizim KIDO train'indeyse skor iyimserdir (model o çizimi eğitimde gördü); rapor bunu not eder (adım 5).
