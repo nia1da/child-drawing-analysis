@@ -34,7 +34,8 @@ Görüntüler 512×362; bütün ölçümler kenarlardan 4 piksel kırpılmış s
   ise. Histerezis: V < 240 ya da S > 20 olan soluk pikseller, bu kesin eşikleri geçen bir parçaya bağlıysa katılır.
   8 pikselden küçük parçalar ve piksellerinin %90'ı kenara 10 pikselden yakın parçalar (tarama izleri) atılır.
   Eşiklerin ölçüldüğü veriler `mask.py` başında. Maske 24 çizimlik kontrol sayfasıyla onaylandı (2026-10-19;
-  `python -m src.measurements.mask_check`, Drive `maske_kontrol/`).
+  Drive `maske_kontrol/`; aday havuzu o zaman bütün bölümlerdi, seçilen 24 çizimin 21'i train, 3'ü val). Yeni
+  çalıştırmalar (`python -m src.measurements.mask_check`) sadece train'den seçer ve `maske_kontrol_<YYYYMMDD-HHMM>/`'e yazar.
 
 Kompozisyon:
 - **Doluluk oranı** (`doluluk_orani`): maskedeki piksellerin sayfaya oranı.

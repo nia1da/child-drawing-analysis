@@ -71,7 +71,7 @@
   `PY -m src.evaluation --experiment convnext_tiny_448px_lr0.0001_ls0.1_s42 --quick`
 - Çizim raporu: `PY -m src.report data/kido/Dataset/Images/Emotion/train/Sadness/110-3H-1081-F-S.jpg`
   (JSON + metin, Drive `raporlar/`). Normlar: `PY -m src.measurements.norms` (train, birkaç dakika).
-  Maske kontrol sayfası: `PY -m src.measurements.mask_check` (train'den; Drive `maske_kontrol_<tarih>/`, onaylı
+  Maske kontrol sayfası: `PY -m src.measurements.mask_check` (train'den; Drive `maske_kontrol_<YYYYMMDD-HHMM>/`, onaylı
   `maske_kontrol/` üzerine yazılmaz).
 - Dosyalar her zaman `encoding="utf-8"` ile açılır (Windows'un varsayılanı cp1254).
 

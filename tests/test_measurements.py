@@ -249,6 +249,27 @@ class MaskCheckTest(unittest.TestCase):
         self.assertTrue(read)
         self.assertEqual(set(read), {"train"})
 
+    def test_build_keeps_approved_page(self):
+        from src.measurements import mask_check as C
+        with tempfile.TemporaryDirectory() as d:
+            os.makedirs(f"{d}/maske_kontrol")
+            with open(f"{d}/maske_kontrol/liste.csv", "w", encoding="utf-8") as f:
+                f.write("onayli\n")
+            with mock.patch.object(C, "pick", return_value=[]), mock.patch.object(C, "load_metadata"):
+                folder, _ = C.build(d)
+            self.assertNotEqual(os.path.basename(folder), "maske_kontrol")
+            self.assertTrue(os.path.basename(folder).startswith("maske_kontrol_"))
+            with open(f"{d}/maske_kontrol/liste.csv", encoding="utf-8") as f:
+                self.assertEqual(f.read(), "onayli\n")
+            with mock.patch.object(C, "pick", return_value=[]), mock.patch.object(C, "load_metadata"), \
+                    mock.patch.object(C.os.path, "exists", return_value=True):
+                with self.assertRaises(FileExistsError):  # aynı dakikada ikinci çalıştırma yazmaz
+                    C.build(d)
+            with mock.patch.object(C, "pick", side_effect=RuntimeError), mock.patch.object(C, "load_metadata"):
+                with self.assertRaises(RuntimeError):
+                    C.build(f"{d}/hata")
+            self.assertFalse(os.path.exists(f"{d}/hata"))  # seçim hata verince boş klasör kalmıyor
+
 
 class NormsTest(unittest.TestCase):
     def test_percentile_mid_rank(self):

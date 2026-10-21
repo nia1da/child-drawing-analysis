@@ -1,12 +1,16 @@
 """Maske kontrol sayfası: seçilmiş çizimlerin orijinali ve maskesi yan yana, gözle kontrol için.
 
 Her sınıf düzeyinden (1-8) 3 train çizimi; toplamda yarısı renkli, yarısı karakalem. Karakalem: maskedeki
-renkli (S > COLOR_S) piksel oranı %5'in altında. Çıktı {output}/maske_kontrol/: her çizim için bir PNG
+renkli (S > COLOR_S) piksel oranı %5'in altında. Çıktı {output}/maske_kontrol_<YYYYMMDD-HHMM>/: her çizim için bir PNG
 (orijinal | maske | maske kırmızıyla orijinalin üstünde), 4 özet sayfa (6'şar çizim) ve index.html.
+
+{output}/maske_kontrol/ kullanıcının onayladığı sayfa (2026-10-19, havuz train + val + test idi); üzerine yazılmaz.
 
 Kullanım: python -m src.measurements.mask_check
 """
 import os
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -76,10 +80,13 @@ def panel(item, font):
 
 
 def build(output_dir=PATHS["output"], seed=0):
-    folder = f"{output_dir}/maske_kontrol"
-    os.makedirs(folder, exist_ok=True)
+    stamp = datetime.now(ZoneInfo("Europe/Istanbul")).strftime("%Y%m%d-%H%M")
+    folder = f"{output_dir}/maske_kontrol_{stamp}"
+    if os.path.exists(folder):  # var olan klasörün (onaylı maske_kontrol/ dahil) üzerine yazma
+        raise FileExistsError(f"{folder} zaten var; bir dakika sonra yeniden çalıştır.")
     font = ImageFont.load_default(size=16)
     items = pick(load_metadata(), seed=seed)
+    os.makedirs(folder)  # seçimden sonra: seçim hata verirse boş klasör kalmasın
     panels, rows = [], []
     for k, item in enumerate(items, 1):
         p = panel(item, font)
