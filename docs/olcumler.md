@@ -96,6 +96,12 @@ Renk:
 - **Küçük grup:** karşılaştırma grubu 100 çizimden azsa (`report.MIN_GROUP`) ⚠ verilmez (%5'lik kuyruk 5'ten az
   çizime dayanırdı); yüzdelikler gösterilir, raporda "karşılaştırma grubu küçük (n=…)" notu düşer. KIDO normlarında
   böyle grup yok; kural başka normlar (örn. ileride başka veri) için.
+- **Küçük çizim:** doluluk 0,03'ün altındaysa (`report.MIN_FILL`, ≈ 5350 piksel; train'in en düşük %1,2'si, 93 çizim)
+  çizim piksellerine göre oransal ölçümlere (`metrics.PER_DRAWING_MEASURES`: renk entropisi, ortalama doygunluk,
+  koyu ton, sıcak ton payı, renklilik, boyama oranı, kenar yoğunluğu (çizim), çizgi kalınlığı) ⚠ verilmez;
+  yüzdelikleri gösterilir, raporda "çizim çok küçük, oransal ölçümler güvenilir değil" kalite notu düşer
+  (JSON `kalite` içinde `kucuk_cizim`). Eşik bir uzlaşım, belirgin kırılma yok: oransal ölçümlerin %5–95 dışında
+  kalma oranı doluluk > 0,1'de %4–9, 0,02–0,03'te %19–54, < 0,01'de %44–78 (train).
 - Sınıf düzeyi dosya adından: `101-3B-560-F-H.jpg` → 3 (harf şube); görev son harften (H/S).
 - **Yüzdelik:** orta sıra (eşit değerlerin yarısı altta sayılır).
 - **⚠ (aralık dışı):** akranların %5'inden azı bu kadar düşük (ya da yüksek) bir değere sahipse. Orta sıra

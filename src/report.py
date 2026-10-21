@@ -7,6 +7,7 @@ Kullanım: python -m src.report <görüntü yolu> [--grade 3 --task mutlu] [--ou
 KIDO dosya adlarında sınıf ve görev addan okunur. Çıktı: {out}/<ad>.json ve <ad>.txt; metin ekrana da basılır.
 JSON bütün ölçümleri içerir; metin rapor sadece TEXT_MEASURES'ı (bu sırayla) gösterir.
 Karşılaştırma grubu MIN_GROUP'tan küçükse ⚠ verilmez, yerine "karşılaştırma grubu küçük" notu düşer.
+Doluluk MIN_FILL'in altındaysa oransal ölçümlere (PER_DRAWING_MEASURES) ⚠ verilmez, kalite notu düşer.
 """
 import argparse
 import json
@@ -16,13 +17,17 @@ import sys
 from .config import PATHS
 from .data import grade_from_filename, task_from_filename
 from .measurements.mask import FAINT_FLAG
-from .measurements.metrics import INTEGER_MEASURES, MEASURE_INFO, MEASUREMENT_VERSION, measure
+from .measurements.metrics import INTEGER_MEASURES, MEASURE_INFO, MEASUREMENT_VERSION, PER_DRAWING_MEASURES, measure
 from .measurements.norms import NORM_SPLIT, load_norms, norm_group, percentile, tail_shares
 
 TASK_NAMES = {"Happiness": "mutlu", "Sadness": "üzgün"}
 TASK_ARGS = {"mutlu": "Happiness", "uzgun": "Sadness"}
 LOW, HIGH = 5, 95  # akranların %5'inden azı bu kadar düşük / yüksekse ⚠
 MIN_GROUP = 100  # bundan küçük karşılaştırma grubunda %5'lik kuyruk birkaç çizime dayanır: ⚠ verilmez
+# Doluluk bunun altındaysa (≈ 5350 piksel; train'in en düşük %1,2'si, 93 çizim) oransal ölçümlere ⚠ verilmez.
+# Belirgin bir kırılma yok: doluluk düştükçe oransal ölçümlerin %5-95 dışında kalma oranı giderek artıyor
+# (doluluk > 0,1: %4-9; 0,02-0,03: %19-54; < 0,01: %44-78). Eşik bir uzlaşım.
+MIN_FILL = 0.03
 # Metin raporda görünen ölçümler ve sırası (JSON'da hepsi var); ad farklıysa ikinci eleman
 TEXT_MEASURES = {
     "doluluk_orani": None,
@@ -32,6 +37,7 @@ TEXT_MEASURES = {
     "kenar_yogunlugu_cizim": "Detay (kenar yoğunluğu)",
 }
 FAINT_MESSAGE = "soluk renk kullanımı: ölçümler eksik olabilir"
+SMALL_DRAWING_MESSAGE = "çizim çok küçük, oransal ölçümler güvenilir değil"
 NOTE = "Bu rapor çizimi betimler ve akranlarıyla karşılaştırır; tanı ya da yorum içermez. Yorum uzmana aittir."
 
 
@@ -54,16 +60,21 @@ def build_report(path, grade=None, emotion=None, norms=None):
         raise ValueError(f"Norm grubu boş: {grade}. sınıf, {emotion}")
     values = measure(path)
     small = len(group) < MIN_GROUP
+    tiny = values["doluluk_orani"] < MIN_FILL
     measures = []
     for key, (kind, label) in MEASURE_INFO.items():
         p = percentile(group[key], values[key])
         value = values[key] if values[key] is None or key in INTEGER_MEASURES else round(values[key], 4)
         measures.append({"kimlik": key, "grup": kind, "ad": label, "deger": value,
                          "yuzdelik": None if p is None else round(p, 1),
-                         "aralik_disi": None if small else outside(group[key], values[key])})
+                         "aralik_disi": None if small or (tiny and key in PER_DRAWING_MEASURES)
+                         else outside(group[key], values[key])})
     quality = [{"kimlik": "soluk_renk", "deger": round(values["soluk_renk_orani"], 5), "esik": FAINT_FLAG,
                 "bayrak": bool(values["soluk_renk_bayragi"]),
-                "mesaj": FAINT_MESSAGE if values["soluk_renk_bayragi"] else None}]
+                "mesaj": FAINT_MESSAGE if values["soluk_renk_bayragi"] else None},
+               {"kimlik": "kucuk_cizim", "deger": round(values["doluluk_orani"], 4), "esik": MIN_FILL,
+                "bayrak": bool(tiny), "mesaj": SMALL_DRAWING_MESSAGE if tiny else None,
+                "etkilenen": sorted(PER_DRAWING_MEASURES) if tiny else []}]
     return {
         "modul": "cizim",
         "surum": MEASUREMENT_VERSION,

@@ -99,7 +99,8 @@
   `norms.py` (train normları, yüzdelik, kuyruk payları), `mask_check.py` (24 çizimlik görsel kontrol sayfası).
 - `src/report.py`: bir çizim için betimleyici rapor (JSON + metin); JSON'da bütün ölçümler, metinde sadece
   `TEXT_MEASURES` (doluluk, renk sayısı, renklilik, koyu ton, detay = kenar yoğunluğu; son ikisi çizim pikselleriyle).
-  ⚠ akranların %5'inden azı bu kadar uçtaysa; grup 100'den küçükse (`MIN_GROUP`) ⚠ yerine "grup küçük" notu.
+  ⚠ akranların %5'inden azı bu kadar uçtaysa; grup 100'den küçükse (`MIN_GROUP`) ⚠ yerine "grup küçük" notu;
+  doluluk 0,03'ün altındaysa (`MIN_FILL`) oransal ölçümlere (`metrics.PER_DRAWING_MEASURES`) ⚠ verilmez, kalite notu.
 - `notebooks/colab.ipynb`: güncel Colab notebook'u; repoyu clone/pull eder, sadece `src/` fonksiyonlarını çağırır.
 - `notebooks/grad_proj.ipynb`: arşiv (ilk keşif ve denemeler). Çıktıları eski sonuçların kaynağı, silinmemeli
   (`migrate_experiments` bu çıktıları okur); import'lar yeni adlara güncellendi, çıktılar olduğu gibi.

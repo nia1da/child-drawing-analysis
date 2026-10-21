@@ -262,10 +262,11 @@ def synthetic_norms(n, seed=0):
 
 
 class ReportTest(unittest.TestCase):
-    def report(self, norms):
+    def report(self, norms, arr=None):
         from src.report import build_report
-        arr = page()
-        arr[:, : W // 2] = 0  # doluluk 0.5 ve tamamı koyu: grubun üstünde; renk sayısı ve renklilik 0: altında
+        if arr is None:
+            arr = page()
+            arr[:, : W // 2] = 0  # doluluk 0.5 ve tamamı koyu: grubun üstünde; renk sayısı ve renklilik 0: altında
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, "101-3B-1-F-H.jpg")
             Image.fromarray(arr).save(path, quality=95)
@@ -313,6 +314,32 @@ class ReportTest(unittest.TestCase):
         text = format_text(r)
         self.assertNotIn("⚠", text)
         self.assertIn(f"karşılaştırma grubu küçük (n={MIN_GROUP - 1})", text)
+
+    def test_tiny_drawing_no_flags_on_per_drawing_measures(self):
+        from src.measurements.metrics import PER_DRAWING_MEASURES
+        from src.report import MIN_FILL, SMALL_DRAWING_MESSAGE, format_text
+        arr = page()
+        for y in range(120, 220, 25):
+            arr[y:y + 2, 150:350] = 0  # ince siyah çizgiler: doluluk ≈ 0,009, koyu ton 1, renklilik 0
+        r = self.report(synthetic_norms(200), arr)
+        by_key = {m["kimlik"]: m for m in r["olcumler"]}
+        self.assertLess(by_key["doluluk_orani"]["deger"], MIN_FILL)
+        self.assertEqual(by_key["doluluk_orani"]["aralik_disi"], "alt")  # doluluk kendisi oransal değil: ⚠ kalır
+        for k in PER_DRAWING_MEASURES:
+            self.assertIsNone(by_key[k]["aralik_disi"], k)
+        self.assertIsNotNone(by_key["renklilik_cizim"]["yuzdelik"])  # yüzdelik gösterilir
+        quality = {q["kimlik"]: q for q in r["kalite"]}
+        self.assertTrue(quality["kucuk_cizim"]["bayrak"])
+        text = format_text(r)
+        self.assertIn(SMALL_DRAWING_MESSAGE, text)
+        flagged = [line for line in text.splitlines() if line.endswith("⚠")]
+        self.assertTrue(all(line.strip().startswith(("Doluluk", "Farklı renk")) for line in flagged), flagged)
+
+    def test_normal_drawing_has_no_small_drawing_note(self):
+        from src.report import SMALL_DRAWING_MESSAGE, format_text
+        r = self.report(synthetic_norms(200))
+        self.assertFalse({q["kimlik"]: q for q in r["kalite"]}["kucuk_cizim"]["bayrak"])
+        self.assertNotIn(SMALL_DRAWING_MESSAGE, format_text(r))
 
 
 if __name__ == "__main__":
