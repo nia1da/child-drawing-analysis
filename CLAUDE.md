@@ -1,5 +1,12 @@
 # Çizim Analiz — Çocuk çizimleri için uzman karar desteği
 
+## Yeni oturumda önce oku
+1. `CLAUDE.md` (bu dosya: kurallar ve iş akışı)
+2. `docs/durum.md`: şu anki aşama, son biten iş, sıradaki adım, açık sorular
+3. `docs/plan.md`: aşamalar ve durumları
+4. `docs/kararlar.md`: verilmiş kararlar ve gerekçeleri (kullanıcıya sormadan değiştirilmez)
+5. `docs/rapor_taslagi.md`: hedef rapor
+
 ## Proje
 - Bitirme projesi: çocuk ve ergen psikiyatrisi uzmanına ön-analiz sunan bir karar destek sistemi.
   Çizim, Yazı, Konuşma ayrı ve bağımsız modüller; şu an sadece **Çizim** modülü.
@@ -62,9 +69,10 @@
 - Testler: `PY -m unittest discover -s tests -t .` (sentetik veriyle, KIDO gerekmez).
 - Hızlı test: `PY -m src.training --model convnext_tiny --size 320 --quick`,
   `PY -m src.evaluation --experiment convnext_tiny_448px_lr0.0001_ls0.1_s42 --quick`
-- Çizim raporu: `PY -m src.report data/kido/Dataset/Images/Emotion/test/Sadness/205-7G-940-M-S.jpg`
+- Çizim raporu: `PY -m src.report data/kido/Dataset/Images/Emotion/train/Sadness/110-3H-1081-F-S.jpg`
   (JSON + metin, Drive `raporlar/`). Normlar: `PY -m src.measurements.norms` (train, birkaç dakika).
-  Maske kontrol sayfası: `PY -m src.measurements.mask_check`.
+  Maske kontrol sayfası: `PY -m src.measurements.mask_check` (train'den; Drive `maske_kontrol_<tarih>/`, onaylı
+  `maske_kontrol/` üzerine yazılmaz).
 - Dosyalar her zaman `encoding="utf-8"` ile açılır (Windows'un varsayılanı cp1254).
 
 ## Kod yapısı
@@ -111,6 +119,7 @@
   ilk üç parça öğrenci kimliği (`ogrenci`).
 
 ## Alınmış kararlar (kullanıcıya sormadan değiştirme)
+Tarihli ve gerekçeli tam liste: `docs/kararlar.md`. Aşağıdakiler kod için en sık gerekenler.
 - Test seti: KIDO'nun resmi `test` klasörü. Val: train'den **öğrenci bazında** %15,
   eğitim seviyesi + cinsiyete göre stratifiye, seed 42. Aynı öğrencinin çizimleri tek bölümde kalır.
 - Baseline hedef: makaledeki görüntü modeli ≈ %79 F1. Metrik: macro F1.
@@ -159,11 +168,19 @@
   metadata sütunları (`dosya, split, duygu, cinsiyet, egitim, ogrenci, bolum`), tahmin CSV'leri (`gercek, olasilik_uzgun, tahmin`),
   `{deney}_esik.json` anahtarları, deney adı biçimi, aug değerleri (`temel`, `renk`), Drive klasör/dosya adları.
   Koddaki `df.duygu`, `t.gercek` gibi erişimler bu yüzden Türkçe.
-- Git işlemlerini (commit, branch, push) kullanıcı yapar. Claude sadece kodu düzenler,
-  değişiklikleri küçük ve anlamlı parçalar halinde tutar ve neyin değiştiğini özetler.
-- Ölçüm veya norm kodunda bir iş bitince, bana raporlamadan önce dogrulayici subagent'ını çalıştır.
-- Yeni bir aşamaya başlamadan önce planı ve bir aşama bitince sonucu denetleyici subagent'ına göster; çıktısını bana
-  raporla. Aşamalar `docs/plan.md`, hedef rapor `docs/rapor_taslagi.md`.
+- Değişiklikler küçük ve anlamlı commit'ler halinde tutulur; neyin değiştiği özetlenir. Commit ve push iş akışının
+  kapanış adımında Claude tarafından yapılır (aşağıda); branch açmak ve geçmişi yeniden yazmak kullanıcıya sorulur.
+
+## İş akışı (kalıcı kural)
+Planlama ve kararlar bu oturumlarda yapılır; ayrı bir planner subagent yok, planlamayı ana oturum yapar.
+1. **Plan:** Yeni iş plan modunda planlanır, kod yazılmaz. Büyük işlerde plan `docs/plan_<konu>.md` olarak kaydedilir.
+2. **Denetim:** Plan denetleyici subagent'ına gösterilir, önerileri plana işlenir.
+3. **Onay:** Plan ve denetim sonucu kullanıcıya sunulur; onay olmadan uygulanmaz.
+4. **Uygulama ve testler.**
+5. **Doğrulama:** dogrulayici çalışır, raporu `docs/dogrulama/<tarih>-<konu>.md` olarak kaydedilir. "Şüpheli" ya da
+   "başarısız" ise düzeltilir ve tekrar çalıştırılır.
+6. **Kapanış:** Commit ve push; `docs/plan.md` ve `docs/durum.md` güncellenir; verilen kararlar `docs/kararlar.md`'ye
+   eklenir. Aşama bitince denetleyici sonucu da denetler, çıktısı kullanıcıya raporlanır.
 - Eğitim kodunda değişiklik yapınca Colab'a göndermeden önce `--quick` (`train(..., quick=True)`) ile yerelde test et:
   bölüm başına her sınıftan 8 görsel, 1 epoch, batch 4 (accum ortam varsayılanı). Hızlı mod model kaydetmez ve `deneyler.csv`'ye yazmaz;
   gerçek sonuçlar sadece Colab'daki tam eğitimlerden gelir.
