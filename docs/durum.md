@@ -10,17 +10,19 @@ Son güncelleme: 2026-11-10. Aşamalar: `docs/plan.md`; kararlar: `docs/kararlar
   (adım 1–5 bitti, `docs/plan_gorev_uyumu.md`); test metrikleri (adım 6) da bitti. Sınıf düzeyi tahmini henüz planlanmadı.
 
 ## Son biten iş
-- Küçük çizim kümesi kuralla belirlendi, metin raporda "*" işareti, JSON kalite alanları; dogrulayici: GEÇTİ
-  (`docs/dogrulama/2026-10-21-kucuk-cizim-kumesi.md`).
-- Maske kontrol sayfası sadece train'den, tarihli klasöre.
-- İş akışı CLAUDE.md'ye yazıldı; `docs/kararlar.md` ve bu dosya oluşturuldu.
+- **Görev uyumu ve mutlu–üzgün ayrışma** (`docs/plan_gorev_uyumu.md`, tamamlandı 2026-11-10): val normları, rapora bağlama,
+  test metrikleri (`docs/plan_test_metrikleri.md`; test AUC 0,889, norm aktarımı makul, ilkokul erkek mutlu→üzgün %28,3).
+  Dogrulayici: adım 2–6 GEÇTİ (`docs/dogrulama/`). Aşama sonu denetimi: uyumlu; öneriler (rapor taslağı hizalama,
+  temkinli iyimserlik ifadesi, kapanış kayıtları, CLAUDE.md sonuçları) işlendi.
+- Test seti görev uyumu için bir kez kullanıldı (hash `docs/kararlar.md`'de); bir daha bakılmaz.
 
 ## Sıradaki adım
-Görev uyumu planı adım 2 bitti (2026-10-21; dogrulayici GEÇTİ): normlar eğitim seviyesi x görev, ayrışma olasılık
-farkıyla (`docs/olcumler.md`, "Model tabanlı ölçümler"). Yığılma kararı verildi: tam yüzdelik + her raporda not
-(`docs/kararlar.md`). Adım 3, 4 ve 5 bitti (dogrulayici GEÇTİ; adım 5: `docs/dogrulama/2026-10-21-gorev-uyumu-adim5.md`, 69 test geçiyor).
-Adım 6 (test metrikleri) bitti (2026-11-10; dogrulayici GEÇTİ, `docs/dogrulama/2026-11-10-gorev-uyumu-adim6.md`): AUC test 0,889, norm aktarımı makul, ilkokul erkek mutlu→üzgün %28,3. Test seti görev uyumu için bir daha kullanılmaz.
-Sıradaki: "Detay" → "Çizgi miktarı" için plan; sonra sınıf düzeyi tahmini (aşama 3'ün kalanı) planı.
+1. "Detay" → "Çizgi miktarı" (metin rapor değişikliği; plan → denetim → onay). Ölçüm sürümü artarsa
+   `model_normlari.csv` etkilenmemeli (val ve modelden gelir), planda teyit edilecek.
+2. Sınıf düzeyi tahmini (aşama 3'ün kalanı) planı. Dikkat: betimleyici dil (gelişimsel gerilik ima edilmez, ⚠ yok);
+   normlar sınıfa göre olduğu için döngüsel doğrulama riski; test setini yeniden kullanmak ayrı bir karar olur;
+   yeni model gerekirse okul bazında bölme kararı önce verilmeli; cinsiyet girdi değil.
+3. Aşama 8'de klinisyene sorulacaklar: "görev uyumu" adı, ilkokul erkek notu, yığılma notu anlaşılırlığı.
 
 ## Açık sorular
 - **Okul bazında bölme:** kararda "öğrenci ve okul bazında" var, uygulanan öğrenci bazında. Test KIDO'nun resmi

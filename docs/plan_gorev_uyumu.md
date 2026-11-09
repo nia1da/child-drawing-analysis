@@ -1,6 +1,6 @@
 # Plan: görev uyumu ve mutlu–üzgün ayrışma (aşama 3'ün parçası)
 
-Durum: onaylandı (2026-10-21; denetleyici önerileri işlendi). Hedef rapor satırları
+Durum: tamamlandı (2026-11-10; adım 1–6 dogrulayici GEÇTİ, adım 7 aşama sonu denetimi yapıldı). Onaylandı 2026-10-21, denetleyici önerileri işlendi. Hedef rapor satırları
 (`docs/rapor_taslagi.md`): "Görev uyumu" (her çizim) ve "Mutlu–üzgün ayrışma" (iki çizim birlikte).
 
 ## Sabitler (değişmez, CLAUDE.md)

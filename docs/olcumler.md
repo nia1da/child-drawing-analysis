@@ -271,7 +271,7 @@ grubunun içinde" notu çıkar.
 ### Sınırlamalar (her raporda aynı, koşulsuz)
 1. Skor çocuğun ruh hali değil; modelin görev benzerliğidir.
 2. Norm kaynağı val: model ve ayar seçimi val ile yapıldığı için yüzdelikler hafif iyimser olabilir. Payı test
-   çizimlerinin val normlarındaki dağılımıyla ölçüldü: ölçülen sapma küçük (aşağıda).
+   çizimlerinin val normlarındaki dağılımıyla ölçüldü: belirgin bir sapma saptanmadı, küçük bir yukarı yönlü sapma dışlanamaz (aşağıda).
 3. Model ilkokul erkek çocukların mutlu çizimlerini daha sık "üzgün" görevine benzetir; bu gruptaki çocuklarda düşük
    görev uyumu ve düşük ayrışma daha sık beklenir. Not herkese aynı gösterilir, cinsiyete göre koşullu değildir.
    Sayı: 320px referans modelde test %28,3 (GA 22,0–34,7; 448px modelde %33,7 görülmüştü).
@@ -290,7 +290,7 @@ sha256 `ac410b6f…98c1`); 816 öğrenci, 1632 çizim. Tablolar `{output}/test_m
 Birincil metrikler genel AUC, `d > 0` oranı ve norm aktarımıdır; alt grup sonuçları betimleyici ve düzeltmesizdir.
 
 - **Ayırt edicilik (birincil).** AUC val 0,880 (GA 0,862–0,898), test 0,889 (0,872–0,904); val–test farkı −0,009
-  (test biraz yüksek, iyimserlik görülmedi). macro F1 (0,5 eşiği) val 0,810, test 0,806 (0,787–0,825). Çiftlerde
+  (test biraz yüksek; belirgin iyimserlik payı saptanmadı, küçük bir yukarı yönlü sapma dışlanamaz). macro F1 (0,5 eşiği) val 0,810, test 0,806 (0,787–0,825). Çiftlerde
   `d > 0` oranı val %86,4, test %89,3 (87,1–91,4).
 - **Norm aktarımı (birincil).** Test çizimlerinin val normundaki yüzdeliği ≤ 5 olanlar %4,8 (3,7–5,9), ≥ 95 olanlar
   %6,3 (5,2–7,5) (görev uyumu, genel; beklenen %5). Hücre hükümleri (önceden yazılmış kural: GA'nın tamamı %10'un

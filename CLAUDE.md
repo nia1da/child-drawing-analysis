@@ -158,9 +158,13 @@ Tarihli ve gerekçeli tam liste: `docs/kararlar.md`. Aşağıdakiler kod için e
 - Yerel tekrar (2026-10-19, RTX 4060, 16 x 2): convnext_tiny 320px 8 epoch val F1 0.8022 (ep 6), 8,4 dk. Colab'daki
   aynı seed'li 12 epoch çalıştırmasının 8. epoch'u 0.8036; aynı aralıkta kabul edildi.
 - Test setine sadece nihai kıyaslama/raporlama için bak; seçim val ile yapılır.
-- Alt gruplar (s42, test): erkeklerde F1 belirgin düşük (Female 0.853, Male 0.795; ilkokul erkek 0.765).
+- Referans 320px model, görev uyumu test metrikleri (2026-11-10, bir kez; tahminler hash'iyle `docs/kararlar.md`'de,
+  ayrıntı `docs/olcumler.md` "Bu ölçümün doğruluğu"): test macro F1 0.8064, AUC 0.889, çiftlerde `d > 0` %89,3; val normuna
+  aktarım makul; ilkokul erkek mutlu→üzgün %28,3 (GA 22,0–34,7). Test seti görev uyumu için bir daha kullanılmaz;
+  `evaluation` var olan test CSV'sini ezmez. Sınıf düzeyi tahmini gibi yeni bir iş testi kullanacaksa ayrı karar gerekir.
+- Alt gruplar (448px s42, test): erkeklerde F1 belirgin düşük (Female 0.853, Male 0.795; ilkokul erkek 0.765).
 - Testte her öğrencinin tam 2 çizimi var (biri mutlu, biri üzgün).
-- Hata analizi (s42, test): ilkokul erkek hatası tek yönlü, mutlu çizimlerin %33.7'si "üzgün" (diğer gruplar %11–19).
+- Hata analizi (448px s42, test): ilkokul erkek hatası tek yönlü, mutlu çizimlerin %33.7'si "üzgün" (diğer gruplar %11–19).
   Seyrek/az renkli mutlu çizimler etkili ama aynı renklilikte de fark sürüyor. Bootstrap: ilkokul kız−erkek farkı anlamlı,
   ortaokulda değil. Model güveni anlamlı: güven <0.5 → %64, ≥0.8 → %92–97 doğruluk.
 - Gruba özel (cinsiyete göre) eşik kullanılmaz: model girdisi olarak cinsiyet gerektirir, etik açıdan sorunlu.
