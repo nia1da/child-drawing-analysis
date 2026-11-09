@@ -29,6 +29,6 @@ Hedef rapor: `docs/rapor_taslagi.md`. Durum 2026-10-21 itibarıyla.
 - **3. Çizim yaşı ve görev uyumu:** Duygu sınıflandırıcısı (convnext_tiny, val F1 0.8095) bu aşamanın **erken yapılmış
   bir parçası**; 2026-10-19'da donduruldu. Henüz yapılmayanlar:
   - sınıf düzeyi tahmini;
-  - bunların test metrikleri (plan adım 6).
 
-  Görev uyumu ve mutlu–üzgün ayrışma rapora bağlandı (`docs/plan_gorev_uyumu.md` adım 1–5, dogrulayici GEÇTİ, 2026-10-21).
+  Görev uyumu ve mutlu–üzgün ayrışma rapora bağlandı (`docs/plan_gorev_uyumu.md` adım 1–5, dogrulayici GEÇTİ, 2026-10-21);
+  test metrikleri ölçüldü ve belgelendi (adım 6, `docs/plan_test_metrikleri.md`, dogrulayici GEÇTİ, 2026-11-10).

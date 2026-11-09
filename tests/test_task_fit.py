@@ -33,6 +33,11 @@ def predictions(n_per_grade=40, seed=0, trend=0.0):
 
 
 class TaskFitTest(unittest.TestCase):
+    def test_limitations_cite_reference_model_number(self):
+        text = " ".join(T.LIMITATIONS)
+        self.assertNotIn("448", text)
+        self.assertIn("320px modelde test: %28,3", text)
+
     def test_task_fit_direction(self):
         t = T.with_task_fit(predictions())
         happy, sad = t[t.duygu == "Happiness"], t[t.duygu == "Sadness"]

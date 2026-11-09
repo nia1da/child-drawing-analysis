@@ -211,7 +211,7 @@ tanım ve sınırlamalar.
 - **Ayrışma:** `d = p(üzgün çizim) − p(mutlu çizim)` (olasılık farkı). Ölçüte göre (iki skoru da aynı uçta, < 0,1 ya
   da > 0,9, olan çiftler %25'ten fazlaysa logit) olasılık kaldı: val'de bu çiftler %5,9. `d > 0` olan çiftler %86,4.
 - **Norm kaynağı:** KIDO val (1386 çizim, 693 öğrenci). Val model ve ayar seçiminde kullanıldı; iyimserlik payı
-  testte ölçülecek (plan adım 6).
+  testte ölçüldü (aşağıda, "Bu ölçümün doğruluğu").
 - **Norm grubu: eğitim seviyesi x görev** (ilkokul 1–4: 346 çizim / öğrenci; ortaokul 5–8: 347). Ölçüt val
   tahminlerinden önce yazıldı (Kruskal–Wallis p < 0,05 / 6 ve bir sınıfın havuzdaki medyan yüzdeliğinin 50'den
   ≥ 10 puan sapması, ikisi aynı hücrede). Val sonucu (her sınıfın havuzdaki medyan yüzdeliği):
@@ -271,14 +271,41 @@ grubunun içinde" notu çıkar.
 ### Sınırlamalar (her raporda aynı, koşulsuz)
 1. Skor çocuğun ruh hali değil; modelin görev benzerliğidir.
 2. Norm kaynağı val: model ve ayar seçimi val ile yapıldığı için yüzdelikler hafif iyimser olabilir. Payı test
-   çizimlerinin val normlarındaki dağılımıyla ölçülecek (plan adım 6).
+   çizimlerinin val normlarındaki dağılımıyla ölçüldü: ölçülen sapma küçük (aşağıda).
 3. Model ilkokul erkek çocukların mutlu çizimlerini daha sık "üzgün" görevine benzetir; bu gruptaki çocuklarda düşük
    görev uyumu ve düşük ayrışma daha sık beklenir. Not herkese aynı gösterilir, cinsiyete göre koşullu değildir.
-   Sayı: 448px modelde test %33,7; 320px referans model için adım 6'da güncellenecek.
+   Sayı: 320px referans modelde test %28,3 (GA 22,0–34,7; 448px modelde %33,7 görülmüştü).
 4. Seyrek ya da az renkli çizimlerde görev uyumu düşebilir; doluluk ve renk sayısıyla birlikte okunmalı.
 5. Üst dilimlerde skorlar birbirine çok yakın (yukarıdaki yığılma notu).
 6. Norm grubu seçimi sınırda kaldı: ortaokul üzgün hücresinde sınıf eğilimi düzeltmesiz anlamlıydı (p 0,030); eğitim
    seviyesi normunda ortaokul 7. sınıf çizimleri daha düşük, 8. sınıf daha yüksek yüzdelik alabilir.
 7. Normlar KIDO'dan (Şanlıurfa, 1–8. sınıf); başka bir örneklemde dağılım farklı olabilir.
-8. Test doğruluğu (AUC, `d > 0` oranı, alt gruplar) henüz yok; adım 6'da "bu ölçümün doğruluğu" olarak eklenecek.
-   Çizim KIDO train'indeyse skor iyimserdir (model o çizimi eğitimde gördü); rapor bunu not eder (adım 5).
+8. Test doğruluğu aşağıda ("Bu ölçümün doğruluğu"). Çizim KIDO train'indeyse skor iyimserdir (model o çizimi eğitimde gördü); rapor bunu not eder (adım 5).
+
+### Bu ölçümün doğruluğu (test, 2026-11-10; plan `docs/plan_test_metrikleri.md`, adım 6)
+Test tahminleri referans modelle bir kez üretildi (`tahminler/convnext_tiny_320px_lr0.0001_ls0.1_s42_test.csv`,
+sha256 `ac410b6f…98c1`); 816 öğrenci, 1632 çizim. Tablolar `{output}/test_metrikleri/` (`python -m src.final_metrics`).
+Öğrenci bazlı bootstrap %95 GA (2000, seed 42). **Dürüstlük notu:** test seti daha önce 448px modelle görülmüştü
+(alt grup hipotezi oradan); bu 320px modelde ilk ve tek ölçümdür, bağımsız keşif değil yeniden doğrulamadır.
+Birincil metrikler genel AUC, `d > 0` oranı ve norm aktarımıdır; alt grup sonuçları betimleyici ve düzeltmesizdir.
+
+- **Ayırt edicilik (birincil).** AUC val 0,880 (GA 0,862–0,898), test 0,889 (0,872–0,904); val–test farkı −0,009
+  (test biraz yüksek, iyimserlik görülmedi). macro F1 (0,5 eşiği) val 0,810, test 0,806 (0,787–0,825). Çiftlerde
+  `d > 0` oranı val %86,4, test %89,3 (87,1–91,4).
+- **Norm aktarımı (birincil).** Test çizimlerinin val normundaki yüzdeliği ≤ 5 olanlar %4,8 (3,7–5,9), ≥ 95 olanlar
+  %6,3 (5,2–7,5) (görev uyumu, genel; beklenen %5). Hücre hükümleri (önceden yazılmış kural: GA'nın tamamı %10'un
+  üstündeyse "zayıf"): 8 hücrenin 16 ucundan 15'i "makul"; ortaokul mutlu üst uç %10,5 (7,6–13,8) "belirsiz". Hiçbir uç
+  "zayıf" değil. Val normu sabit alındı; val'in kendi örnekleme belirsizliği GA'da yok. 50. yüzdelik altı oranı
+  %43,9–55,1 (hükme girmez). Ayrışma: ≤ 5 %4,0, ≥ 95 %5,1.
+- **Alt gruplar (betimleyici).** AUC kadın 0,907, erkek 0,857; ilkokul kadın 0,913, ilkokul erkek 0,826; ortaokul
+  kadın 0,903, ortaokul erkek 0,898. macro F1: ilkokul kadın 0,846, ilkokul erkek 0,741. Kadın–erkek AUC farkı 0,050
+  (GA 0,018–0,081), ilkokul kadın–erkek 0,087 (0,041–0,131); ortaokulda fark 0,006 (−0,039–0,052). Sınıf düzeyi
+  AUC 0,84–0,92 (sınıf 8 en geniş GA: 0,756–0,909, n=59). Sınıflar arası fark yazılmadı.
+- **Hata yönü.** Mutlu çizimin "üzgün" tahmin edilmesi: genel %18,8; ilkokul erkek %28,3 (22,0–34,7), ilkokul kadın
+  %12,2 (8,3–16,8), ortaokul erkek %19,0 (12,3–25,9). Üzgün→mutlu yönü gruplar arasında %18–24 civarında, belirgin
+  fark yok. Sınırlama notundaki sayı bununla güncellendi (%33,7 → %28,3, 448px → 320px).
+- **En alt %5 sıklığı** (görev uyumu yüzdeliği ≤ 5, sadece belgeleme): genel %4,8; ilkokul erkek %6,4; ortaokul erkek
+  %3,3; sınıf 7 ve 8 %6,5–6,8. Gruplar arası fark küçük; ⚠ kararını değiştirmez.
+- **Sınırlamalar:** alt grup ve sınıf tabloları düzeltmesiz (yaklaşık 20 grup); küçük gruplarda GA geniş.
+  Test val'den farklı örneklem olduğu için norm aktarımının makul çıkması başka örnekleme genelleme anlamına gelmez
+  (hepsi KIDO).

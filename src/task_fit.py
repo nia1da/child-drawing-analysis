@@ -178,8 +178,8 @@ LIMITATIONS = [
     "göstermez.",
     "Üst dilimlerde skorlar birbirine çok yakın (50.–95. dilim arası 0,03–0,06 olasılık farkı); küçük yüzdelik "
     "farkları anlamlı okunmamalı.",
-    "Model ilkokul erkek çocukların mutlu çizimlerini daha sık \"üzgün\" görevine benzetir (448px modelde test: "
-    "%33,7); bu gruptaki çocuklarda düşük görev uyumu ve düşük ayrışma daha sık beklenir.",
+    "Model ilkokul erkek çocukların mutlu çizimlerini daha sık \"üzgün\" görevine benzetir (320px modelde test: "
+    "%28,3); bu gruptaki çocuklarda düşük görev uyumu ve düşük ayrışma daha sık beklenir.",
     "Seyrek ya da az renkli çizimlerde görev uyumu düşebilir; doluluk ve renk sayısıyla birlikte okunmalı.",
     "Normlar KIDO (Şanlıurfa, 1–8. sınıf) val bölümünden; başka bir örneklemde dağılım farklı olabilir.",
     "Bu ölçümlerde ⚠ verilmez.",

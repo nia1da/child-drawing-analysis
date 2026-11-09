@@ -7,7 +7,7 @@ Son güncelleme: 2026-11-10. Aşamalar: `docs/plan.md`; kararlar: `docs/kararlar
 - **Aşama 2 (parametreler ve normlar):** neredeyse bitti. Bütün ölçümler, train normları (ölçüm sürümü 3), maske
   kontrolü, kalite kuralları (soluk renk, küçük grup, küçük çizim) tamam. Kalan: "Detay" → "Çizgi miktarı".
 - **Aşama 3 (çizim yaşı ve görev uyumu):** görev uyumu ve mutlu–üzgün ayrışma raporda
-  (adım 1–5 bitti, `docs/plan_gorev_uyumu.md`); test metrikleri (adım 6) kaldı. Sınıf düzeyi tahmini henüz planlanmadı.
+  (adım 1–5 bitti, `docs/plan_gorev_uyumu.md`); test metrikleri (adım 6) da bitti. Sınıf düzeyi tahmini henüz planlanmadı.
 
 ## Son biten iş
 - Küçük çizim kümesi kuralla belirlendi, metin raporda "*" işareti, JSON kalite alanları; dogrulayici: GEÇTİ
@@ -19,7 +19,8 @@ Son güncelleme: 2026-11-10. Aşamalar: `docs/plan.md`; kararlar: `docs/kararlar
 Görev uyumu planı adım 2 bitti (2026-10-21; dogrulayici GEÇTİ): normlar eğitim seviyesi x görev, ayrışma olasılık
 farkıyla (`docs/olcumler.md`, "Model tabanlı ölçümler"). Yığılma kararı verildi: tam yüzdelik + her raporda not
 (`docs/kararlar.md`). Adım 3, 4 ve 5 bitti (dogrulayici GEÇTİ; adım 5: `docs/dogrulama/2026-10-21-gorev-uyumu-adim5.md`, 69 test geçiyor).
-Sıradaki: adım 6 (test metrikleri, bir kez, en son). Ayrıca "Detay" → "Çizgi miktarı" için plan.
+Adım 6 (test metrikleri) bitti (2026-11-10; dogrulayici GEÇTİ, `docs/dogrulama/2026-11-10-gorev-uyumu-adim6.md`): AUC test 0,889, norm aktarımı makul, ilkokul erkek mutlu→üzgün %28,3. Test seti görev uyumu için bir daha kullanılmaz.
+Sıradaki: "Detay" → "Çizgi miktarı" için plan; sonra sınıf düzeyi tahmini (aşama 3'ün kalanı) planı.
 
 ## Açık sorular
 - **Okul bazında bölme:** kararda "öğrenci ve okul bazında" var, uygulanan öğrenci bazında. Test KIDO'nun resmi

@@ -39,7 +39,8 @@ Kayıt: C-0142 | Sınıf: 3 | Cinsiyet: K | Ziyaret: 2 (08.10.2026)
     (model iki çizimi görevlerine uygun yönde sıralıyor)
   Sınırlama: model ilkokul erkek çocukların mutlu çizimlerini daha sık "üzgün" görevine
     benzetir; görev uyumu ve ayrışma bu grupta daha düşük çıkabilir. Normlar: KIDO val.
-    Görev uyumu ve ayrışmada ⚠ verilmez.
+    Görev uyumu ve ayrışmada ⚠ verilmez. Modelin KIDO test setindeki ayırt ediciliği: AUC 0,89
+    (816 öğrenci); ilkokul erkeklerde mutlu çizimlerin %28'i "üzgün" görevine benzetildi.
 
   ── Açıklama metinleri ───────────────────────────────────────
   Kelime sayısı: 14 / 6 | Duygu kelimesi: 2 / 1
