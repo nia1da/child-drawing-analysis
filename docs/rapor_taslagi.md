@@ -60,7 +60,8 @@ Kayıt: C-0142 | Sınıf: 3 | Cinsiyet: K | Ziyaret: 2 (08.10.2026)
   Yazım hatası yoğunluğu: 3. sınıf normunun 71. yüzdelik dilimi
 
   ⚠ Tipik aralık (%5–95) dışında kalanlar:
-    Üzüntü çiziminde doluluk ve çizgi miktarı belirgin biçimde düşük
+    Üzüntü çiziminde doluluk ve çizgi miktarı (çizgilerin toplam uzunluğu) düşük; çizim küçük,
+    iki satır aynı olguyu yansıtır (boyanmış alanlar çizgi sayılmaz)
 
   Görüşme önerileri (bulguya bağlı, açık uçlu):
     • "Bana resmini anlatır mısın?"

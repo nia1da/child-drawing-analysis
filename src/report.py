@@ -48,10 +48,13 @@ TEXT_MEASURES = {
     "renk_sayisi": None,
     "renklilik_cizim": "Renklilik",
     "koyu_ton_orani": None,
-    "kenar_yogunlugu_cizim": "Detay (kenar yoğunluğu)",
+    "cizgi_uzunlugu": "Çizgi miktarı",
 }
 FAINT_MESSAGE = "soluk renk kullanımı: ölçümler eksik olabilir"
 SMALL_DRAWING_MESSAGE = "çizim çok küçük, bu ölçümler güvenilir değil"
+LINE_NOTE = "Not: Çizgi miktarı, çizgilerin toplam uzunluğudur; boyanmış alanlar çizgi sayılmaz."
+# Doluluk ve çizgi miktarı mutlak ölçümler: küçük çizimde ikisi de uçta çıkar, ama bu tek olgudur
+LINE_SMALL_NOTE = "Not: küçük çizimde doluluk ve çizgi miktarı aynı olguyu yansıtır; iki ayrı bulgu değildir."
 NOTE = "Bu rapor çizimi betimler ve akranlarıyla karşılaştırır; tanı ya da yorum içermez. Yorum uzmana aittir."
 
 
@@ -216,7 +219,7 @@ def format_text(report):
         where = percentile_text(m["yuzdelik"], "akranlarının")
         mark = "  ⚠" if m["aralik_disi"] else "  *" if m["kimlik"] in starred else ""
         lines.append(f"  {m['ad']:<{width}}  {value:>6}   {where}{mark}")
-    notes = []
+    notes = [LINE_NOTE]
     if g["kucuk"]:
         notes.append(f"Not: karşılaştırma grubu küçük (n={g['n']}); aralık dışı işareti verilmedi.")
     elif any(m["aralik_disi"] for m in shown):
@@ -225,6 +228,8 @@ def format_text(report):
     if tiny["bayrak"]:
         notes.append(f"* {tiny['mesaj']}." if any(m["kimlik"] in starred for m in shown)
                      else "Kalite: çizim çok küçük; JSON'daki bazı oransal ölçümler güvenilir değil.")
+    if tiny["bayrak"]:
+        notes.append(LINE_SMALL_NOTE)
     notes += [f"Kalite: {q['mesaj']}." for q in report["kalite"] if q["bayrak"] and q is not tiny]
     if report["normda_mi"]:
         notes.append("Not: bu çizim karşılaştırma grubunun içinde (KIDO train).")

@@ -17,8 +17,8 @@
 | | Sıcak/soğuk oranı | Kırmızı-sarı tonların mavi-yeşil tonlara oranı | Paletin yönü |
 | | Renklilik skoru | Hasler–Süsstrunk ölçütü | Genel renk canlılığı |
 | | Boyama oranı | Renkle doldurulmuş alanların kontur alanlarına oranı | İçler boyanmış mı |
-| Çizgi ve yapı | Kenar yoğunluğu | Canny kenar piksellerinin oranı | Detay ve karmaşıklık |
-| | Toplam çizgi uzunluğu | Maskeyi iskeletleştir, piksel say | Ne kadar çizildiği |
+| Çizgi ve yapı | Kenar yoğunluğu | Canny kenar piksellerinin oranı | Kenar ve doku miktarı (çizgi inceliğiyle birlikte; metin raporda yok) |
+| | Toplam çizgi uzunluğu (metin raporda "Çizgi miktarı") | Maskeyi iskeletleştir, piksel say | Ne kadar çizgi çizildiği (boyanmış alanlar kısa sayılır) |
 | | Ortalama çizgi kalınlığı | Distance transform ile iskelet boyunca kalınlık | Kalem baskısı/araç tipi |
 | | Bağlı bileşen sayısı | Maskedeki ayrı parçalar (çok küçükler hariç) | Ayrı öğe sayısı |
 
@@ -73,13 +73,18 @@ Renk:
   içleri). Sadece kontur ≈ 0, içi boyanmış şekiller ≈ 1. Alan ağırlıklı: büyük bir boyalı zemin bandı oranı yükseltir.
 
 Çizgi ve yapı:
-- **Kenar yoğunluğu** (`kenar_yogunlugu_cizim`, metin raporda "Detay (kenar yoğunluğu)"): gri tonlu sayfada
+- **Kenar yoğunluğu** (`kenar_yogunlugu_cizim`; 2026-11-10'a kadar metin raporda "Detay", artık yalnız JSON'da): gri tonlu sayfada
   Canny kenar dedektörü (sigma 1); maskenin 2 piksel çevresi dışındaki kenarlar (kağıt dokusu, tarama izleri)
   sayılmaz; kenar piksellerinin **çizim piksellerine** oranı. Çizimin büyüklüğünden bağımsız: ince çizgilerden
   oluşan çizim yüksek, geniş düz boyama düşük. Çizim yoksa tanımsız.
 - **Kenar yoğunluğu (sayfa)** (`kenar_yogunlugu`): aynı kenar piksellerinin sayfaya oranı (tablodaki tanım).
   JSON'da ve normlarda duruyor, metin raporda yok.
-- **Toplam çizgi uzunluğu** (`cizgi_uzunlugu`): maskenin iskeleti (skimage `skeletonize`), piksel sayısı.
+- **Toplam çizgi uzunluğu** (`cizgi_uzunlugu`; JSON adı "Toplam çizgi uzunluğu", metin raporda **"Çizgi miktarı"**,
+  2026-11-10'dan itibaren): maskenin iskeleti (skimage `skeletonize`), piksel sayısı. Çizgilerin orta hattının
+  toplam uzunluğudur; **boyanmış alanlar iskelette kısa sayılır, boyama miktarını ölçmez**: yoğun boyalı ama az çizgili
+  bir çizim düşük çıkar. Çizgi kalınlığından bağımsız (Spearman −0,20). Mutlak piksel sayısıdır: normlar yalnız
+  512 x 362 (10860 görüntünün 10848'i; 12'si 512 x 364–367) görüntüler için geçerli, başka çözünürlükte uzunluk
+  yeniden ölçeklenmeli ya da norm yeniden çıkarılmalı.
 - **Ortalama çizgi kalınlığı** (`cizgi_kalinligi`): iskelet boyunca 2d − 1 (d: maskede kenara uzaklık, distance
   transform), piksel. Boyanmış alanlarda iskelet alanın ortasından geçer; değer alanın genişliğini ölçer.
 - **Bağlı bileşen sayısı** (`bilesen_sayisi`): maskedeki 8-komşulukla bağlı parçalar, 30 pikselden küçükler hariç.
@@ -144,8 +149,10 @@ Renk:
   (Drive `raporlar/`). JSON modülden bağımsız: `modul`, `karsilastirma_grubu`, `olcumler`, `kalite`, `not`.
   `kalite` girdilerinin hepsinde aynı alanlar: `kimlik`, `deger`, `esik`, `bayrak`, `mesaj`, `etkilenen` (boş olabilir).
   JSON bütün ölçümleri (tablo sırasıyla, `grup` alanıyla) içerir; metin rapor sadece beşini, bu sırayla gösterir:
-  doluluk oranı, farklı renk sayısı, renklilik (çizim pikselleri), koyu ton oranı, detay (kenar yoğunluğu, çizim
-  pikseli başına).
+  doluluk oranı, farklı renk sayısı, renklilik (çizim pikselleri), koyu ton oranı, çizgi miktarı (toplam çizgi
+  uzunluğu, piksel; 2026-11-10'a kadar beşinci satır "Detay (kenar yoğunluğu)" idi). Metin rapor, çizgi miktarı için
+  her raporda "boyanmış alanlar çizgi sayılmaz" notunu, küçük çizimde ayrıca "doluluk ve çizgi miktarı aynı olguyu
+  yansıtır" notunu düşer.
   Rapor train'deki bir çizim içinse "çizim karşılaştırma grubunun içinde" notu düşer.
 
 ## Maske sınırlamaları
@@ -186,19 +193,34 @@ Sürüm 2 ölçümlerinin sınırlamaları:
    halleri kullanılır; sayfa tabanlı halleri JSON'da ve normlarda kalır. Metin rapordaki beş ölçüm ve boyama oranı
    arasındaki Spearman korelasyonları (train, 7842 çizim, sürüm 3):
 
-   | | doluluk | renk sayısı | renklilik | koyu ton | detay | boyama |
+   | | doluluk | renk sayısı | renklilik | koyu ton | çizgi miktarı | boyama |
    |---|---|---|---|---|---|---|
-   | doluluk | 1 | 0,15 | 0,28 | −0,07 | −0,42 | 0,47 |
-   | renk sayısı | 0,15 | 1 | 0,24 | −0,02 | 0,03 | −0,05 |
-   | renklilik | 0,28 | 0,24 | 1 | −0,16 | −0,56 | 0,50 |
-   | koyu ton | −0,07 | −0,02 | −0,16 | 1 | 0,06 | −0,14 |
-   | detay | −0,42 | 0,03 | −0,56 | 0,06 | 1 | −0,67 |
-   | boyama | 0,47 | −0,05 | 0,50 | −0,14 | −0,67 | 1 |
+   | doluluk | 1 | 0,15 | 0,28 | −0,07 | 0,59 | 0,47 |
+   | renk sayısı | 0,15 | 1 | 0,24 | −0,02 | 0,25 | −0,05 |
+   | renklilik | 0,28 | 0,24 | 1 | −0,16 | −0,21 | 0,50 |
+   | koyu ton | −0,07 | −0,02 | −0,16 | 1 | 0,05 | −0,14 |
+   | çizgi miktarı | 0,59 | 0,25 | −0,21 | 0,05 | 1 | −0,23 |
+   | boyama | 0,47 | −0,05 | 0,50 | −0,14 | −0,23 | 1 |
+
+   (2026-11-10'a kadar beşinci ölçüm "detay" idi; dolulukla −0,42, renklilikle −0,56, boyamayla −0,67.
+   Çizgi miktarının en yüksek ilişkisi dolulukla 0,59; aynı doluluk bandında, 0,08–0,12 (n=650), 5.–95. dilim
+   967–4435: dolulukta olmayan bilgi taşır.)
 
 10. **Detay (çizim pikseli başına kenar) çizgi kalınlığını da ölçer.** Kenar sayısı çizimin konturuyla, payda
     alanıyla büyür: ince çizgilerden oluşan çizim yüksek, geniş boyama düşük değer alır. Boyama oranıyla −0,67,
     ortalama çizgi kalınlığıyla −0,75 ilişkili (train). Değer "çok ayrıntı" kadar "ince çizgi / az boyama" da
-    demektir.
+    demektir. Bu yüzden 2026-11-10'dan itibaren metin raporda yok (yerine çizgi miktarı); JSON'da ve normlarda kalır.
+
+11. **Çizgi miktarı (toplam çizgi uzunluğu) boyanmış alanı çizgi saymaz** (2026-11-10).
+    - İskelet geniş boyalı bölgede kısa kalır: yoğun boyalı ama az çizgili çizim düşük çıkar; metin rapordaki not bunu
+      söyler. Boyama miktarı için JSON'daki boyama oranına bakılır.
+    - JPEG halesi, seyrek tarama ve maske sınırlamaları (2, 3) iki yönde uzunluk ekleyebilir; normlar aynı maskeyle
+      çıktığı için aynı yönde etkilenir, kabul edildi.
+    - Doluluk ile 0,59 ilişkili (en yükseği); küçük çizimde (doluluk < 0,03) hem doluluk hem çizgi miktarı ⚠ alır
+      (çizgi miktarı mutlak bir ölçüm, küçük çizim kümesinde değil; train'de küçüklerde %79,6, büyüklerde %8,2). İkisi
+      tek olgudur (çizim küçük); metin rapor bunu notla söyler. Kural değişmedi, küme tablosu yeniden hesaplanmadı.
+    - Mutlak piksel sayısı: yalnız 512 x ~362 görüntüler için geçerli norm; başka çözünürlükte yeniden ölçekle ya da norm
+      yeniden çıkar.
 
 ## Model tabanlı ölçümler (görev uyumu, mutlu–üzgün ayrışma)
 

@@ -292,6 +292,7 @@ def synthetic_norms(n, seed=0):
     norms["renklilik"] = rng.uniform(20, 60, n)
     norms["renklilik_cizim"] = rng.uniform(40, 120, n)
     norms["kenar_yogunlugu_cizim"] = rng.uniform(0.05, 0.4, n)
+    norms["cizgi_uzunlugu"] = rng.integers(2000, 6000, n)  # gerçek train'de ortanca ≈ 3900, binlerce piksel
     return norms.assign(dosya=[f"x-{i}.jpg" for i in range(n)], sinif=3, duygu="Happiness",
                         surum=MEASUREMENT_VERSION)
 
@@ -326,7 +327,7 @@ class ReportTest(unittest.TestCase):
         self.assertEqual([m["kimlik"] for m in r["olcumler"]], list(MEASURES))  # JSON'da hepsi
         flags = {m["kimlik"]: m["aralik_disi"] for m in r["olcumler"]}
         expected = {"doluluk_orani": "ust", "renk_sayisi": "alt", "koyu_ton_orani": "ust", "renklilik": "alt",
-                    "renklilik_cizim": "alt", "kenar_yogunlugu_cizim": "alt"}
+                    "renklilik_cizim": "alt", "kenar_yogunlugu_cizim": "alt", "cizgi_uzunlugu": "alt"}
         self.assertEqual({k: flags[k] for k in expected}, expected)
         self.assertEqual(r["karsilastirma_grubu"],
                          {"sinif": 3, "gorev": "mutlu", "n": n, "kaynak": "KIDO train", "kucuk": False})
@@ -341,12 +342,12 @@ class ReportTest(unittest.TestCase):
     def test_text_shows_five_measures_in_order(self):
         from src.report import format_text
         text = format_text(self.report(synthetic_norms(200)))
-        names = ["Doluluk oranı", "Farklı renk sayısı", "Renklilik", "Koyu ton oranı", "Detay (kenar yoğunluğu)"]
+        names = ["Doluluk oranı", "Farklı renk sayısı", "Renklilik", "Koyu ton oranı", "Çizgi miktarı"]
         positions = [text.find(f"  {name} ") for name in names]
         self.assertTrue(all(p >= 0 for p in positions), positions)
         self.assertEqual(positions, sorted(positions))
         for hidden in ["Ağırlık merkezi", "Boyama oranı", "Bağlı bileşen", "Renk entropisi", "Bölge doluluğu",
-                       "sayfa"]:
+                       "sayfa", "Detay", "Kenar yoğunluğu"]:
             self.assertNotIn(hidden, text)
         r = self.report(synthetic_norms(200))
         shown = {m["kimlik"]: m for m in r["olcumler"]}
@@ -363,7 +364,7 @@ class ReportTest(unittest.TestCase):
         self.assertIn(f"karşılaştırma grubu küçük (n={MIN_GROUP - 1})", text)
 
     def test_tiny_drawing_no_flags_on_small_drawing_measures(self):
-        from src.report import MIN_FILL, SMALL_DRAWING_MEASURES, SMALL_DRAWING_MESSAGE, format_text
+        from src.report import LINE_SMALL_NOTE, MIN_FILL, SMALL_DRAWING_MEASURES, SMALL_DRAWING_MESSAGE, format_text
         arr = page()
         for y in range(120, 220, 25):
             arr[y:y + 2, 150:350] = 0  # ince siyah çizgiler: doluluk ≈ 0,009, koyu ton 1, renk sayısı ve renklilik 0
@@ -374,6 +375,8 @@ class ReportTest(unittest.TestCase):
         for k in SMALL_DRAWING_MEASURES:
             self.assertIsNone(by_key[k]["aralik_disi"], k)
         self.assertEqual(by_key["renklilik"]["aralik_disi"], "alt")  # sayfa tabanlı renklilik kümede değil
+        self.assertNotIn("cizgi_uzunlugu", SMALL_DRAWING_MEASURES)  # mutlak ölçüm: küçük çizimde ⚠ verilir
+        self.assertEqual(by_key["cizgi_uzunlugu"]["aralik_disi"], "alt")
         self.assertIsNotNone(by_key["renklilik_cizim"]["yuzdelik"])  # yüzdelik gösterilir
         quality = {q["kimlik"]: q for q in r["kalite"]}
         self.assertTrue(quality["kucuk_cizim"]["bayrak"])
@@ -381,10 +384,40 @@ class ReportTest(unittest.TestCase):
         text = format_text(r)
         self.assertIn(f"* {SMALL_DRAWING_MESSAGE}.", text)
         lines = {name: next(line for line in text.splitlines() if line.strip().startswith(name))
-                 for name in ["Doluluk", "Farklı renk", "Renklilik", "Koyu ton", "Detay"]}
+                 for name in ["Doluluk", "Farklı renk", "Renklilik", "Koyu ton", "Çizgi miktarı"]}
         self.assertTrue(lines["Doluluk"].endswith("⚠"), lines["Doluluk"])
-        for name in ["Farklı renk", "Renklilik", "Koyu ton", "Detay"]:
+        # Çizgi miktarı mutlak ölçüm: doluluk gibi küçük çizimde "*" almaz, ⚠ kalır (kümede değil)
+        self.assertTrue(lines["Çizgi miktarı"].endswith("⚠"), lines["Çizgi miktarı"])
+        self.assertIsNone(by_key["kenar_yogunlugu_cizim"]["aralik_disi"])  # JSON'da kümede, metinde yok
+        for name in ["Farklı renk", "Renklilik", "Koyu ton"]:
             self.assertTrue(lines[name].endswith("*"), lines[name])
+        self.assertIn(LINE_SMALL_NOTE, text)
+
+    def test_line_amount_flags_both_tails_and_text(self):
+        from src.report import LINE_NOTE, LINE_SMALL_NOTE, format_text
+        sparse = page()
+        sparse[180:183, 50:450] = 0  # tek çizgi, ≈ 400 piksel: grubun (2000–6000) altında
+        dense = page()
+        for y in range(20, 340, 8):
+            dense[y:y + 2, 20:490] = 0  # 40 çizgi x ≈ 470 piksel ≈ 18800: grubun üstünde
+        flags = {}
+        for name, arr in (("sparse", sparse), ("dense", dense)):
+            r = self.report(synthetic_norms(200), arr)
+            flags[name] = {m["kimlik"]: m["aralik_disi"] for m in r["olcumler"]}["cizgi_uzunlugu"]
+            text = format_text(r)
+            line = next(l for l in text.splitlines() if l.strip().startswith("Çizgi miktarı"))
+            self.assertRegex(line, r"Çizgi miktarı\s+\d{3,5}\s+akranlarının")  # tamsayı, 5 haneye kadar hizalı
+            self.assertIn(LINE_NOTE, text)
+            self.assertNotIn("Detay", text)
+        self.assertEqual(flags, {"sparse": "alt", "dense": "ust"})
+        # Normal büyüklükteki çizimde küçük çizim notu yok
+        self.assertNotIn(LINE_SMALL_NOTE, format_text(self.report(synthetic_norms(200), dense)))
+
+    def test_line_amount_in_json_and_old_detail_kept(self):
+        r = self.report(synthetic_norms(200))
+        keys = [m["kimlik"] for m in r["olcumler"]]
+        self.assertIn("cizgi_uzunlugu", keys)
+        self.assertIn("kenar_yogunlugu_cizim", keys)  # JSON'da kalır
 
     def test_normal_drawing_has_no_small_drawing_note(self):
         from src.report import SMALL_DRAWING_MESSAGE, format_text

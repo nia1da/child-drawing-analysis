@@ -5,7 +5,7 @@ Son güncelleme: 2026-11-10. Aşamalar: `docs/plan.md`; kararlar: `docs/kararlar
 ## Neredeyiz
 - **Aşama 1 (ince dilim):** bitti.
 - **Aşama 2 (parametreler ve normlar):** neredeyse bitti. Bütün ölçümler, train normları (ölçüm sürümü 3), maske
-  kontrolü, kalite kuralları (soluk renk, küçük grup, küçük çizim) tamam. Kalan: "Detay" → "Çizgi miktarı".
+  kontrolü, kalite kuralları (soluk renk, küçük grup, küçük çizim) tamam; metin rapor beşinci satırı "Çizgi miktarı" (2026-11-10).
 - **Aşama 3 (çizim yaşı ve görev uyumu):** görev uyumu ve mutlu–üzgün ayrışma raporda
   (adım 1–5 bitti, `docs/plan_gorev_uyumu.md`); test metrikleri (adım 6) da bitti. Sınıf düzeyi tahmini henüz planlanmadı.
 
