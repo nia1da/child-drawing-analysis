@@ -1,12 +1,12 @@
 # Plan
 
-Hedef rapor: `docs/rapor_taslagi.md`. Durum 2026-10-21 itibarıyla.
+Hedef rapor: `docs/rapor_taslagi.md`. Durum 2026-11-10 itibarıyla.
 
 | Aşama | Yapılacaklar | Bitti sayılması için | Durum |
 |---|---|---|---|
 | 0. Hazırlık | Veri denetimi, öğrenci ve okul bazında bölme, bölmeyi dondurma | Denetim notları ve bölme dosyası kayıtlı | sürüyor |
 | 1. İnce dilim | Basit maske, 3–4 ölçüm, sınıf bazında yüzdelik, JSON, metin rapor | Tek komutla herhangi bir KIDO çiziminden rapor | bitti |
-| 2. Parametreler ve normlar | Bütün ölçümler, maske kontrolü, sınıf × görev normları, kalite kuralları | Normlar kayıtlı, maske hataları belgelenmiş | sürüyor |
+| 2. Parametreler ve normlar | Bütün ölçümler, maske kontrolü, sınıf × görev normları, kalite kuralları | Normlar kayıtlı, maske hataları belgelenmiş | bitti |
 | 3. Çizim yaşı ve görev uyumu | Sınıf düzeyi tahmini, görev uyumu, mutlu–üzgün ayrışma | Test metrikleri raporlandı, rapora eklendi | sürüyor (erken parça) |
 | 4. Açıklama metinleri | Kelime sayısı, duygu kelimeleri, yazım hatası yoğunluğu ve normları | Rapora eklendi | başlamadı |
 | 5. Çağrışım | Benzer çizim arama, tema listesi, çizim → tema modeli | Arama çalışıyor; tema modeli şansın üstünde mi belli | başlamadı |
@@ -23,9 +23,8 @@ Hedef rapor: `docs/rapor_taslagi.md`. Durum 2026-10-21 itibarıyla.
 - **1. İnce dilim:** 2026-10-19'da bitti: maske, doluluk, renk sayısı, koyu ton, train normları, JSON + metin rapor.
 - **2. Parametreler ve normlar:** Bütün ölçümler, normlar (ölçüm sürümü 3), maske kontrol sayfası, maske
   sınırlamaları, kalite kuralları (soluk renk, küçük grup, küçük çizim) yapıldı. Küçük çizim kümesi kuralla
-  belirlendi ve commit edildi (2026-10-21). Açık olan:
-  - metin rapordaki "Detay" yerine "Çizgi miktarı" (toplam çizgi uzunluğu, iskelet): karar verildi (2026-10-21,
-    `docs/kararlar.md`), uygulanmadı.
+  belirlendi ve commit edildi (2026-10-21). Metin rapordaki "Detay" yerine "Çizgi miktarı" (toplam çizgi uzunluğu,
+  iskelet) 2026-11-10'da uygulandı (`docs/plan_cizgi_miktari.md`, dogrulayici GEÇTİ). Açık iş kalmadı.
 - **3. Çizim yaşı ve görev uyumu:** Duygu sınıflandırıcısı (convnext_tiny, val F1 0.8095) bu aşamanın **erken yapılmış
   bir parçası**; 2026-10-19'da donduruldu. Henüz yapılmayanlar:
   - sınıf düzeyi tahmini;

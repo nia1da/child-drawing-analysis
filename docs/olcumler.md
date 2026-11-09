@@ -219,6 +219,9 @@ Sürüm 2 ölçümlerinin sınırlamaları:
     - Doluluk ile 0,59 ilişkili (en yükseği); küçük çizimde (doluluk < 0,03) hem doluluk hem çizgi miktarı ⚠ alır
       (çizgi miktarı mutlak bir ölçüm, küçük çizim kümesinde değil; train'de küçüklerde %79,6, büyüklerde %8,2). İkisi
       tek olgudur (çizim küçük); metin rapor bunu notla söyler. Kural değişmedi, küme tablosu yeniden hesaplanmadı.
+    - Tam sayfa boyalı çizimlerde (doluluk > 0,9; train'de 294 çizim, %3,7) iskelet çok kısa kalır ve çizgi miktarı ⚠
+      alır, gerçekte karakalem çizgisi olsa bile; düşük değer "az çaba" olarak okunmamalı, doluluk ve renklilikle birlikte
+      bakılmalı.
     - Mutlak piksel sayısı: yalnız 512 x ~362 görüntüler için geçerli norm; başka çözünürlükte yeniden ölçekle ya da norm
       yeniden çıkar.
 
