@@ -43,6 +43,23 @@ def _macro_f1(counts):
     return (f1_0 + f1_1) / 2
 
 
+def student_bootstrap(n_units, statistic, n_boot=2000, seed=42):
+    """Öğrenci bazlı bootstrap, herhangi bir istatistik için (AUC gibi sıra tabanlı olanlar dahil).
+
+    Birim öğrencidir (öğrenci başına bir satırlık geniş tablo). statistic(idx) -> {ad: değer}; idx yeniden
+    örneklenmiş satır konumları. Döner: (örneklemdeki değerler, n_boot satırlık yeniden örnekleme tablosu).
+    """
+    rng = np.random.default_rng(seed)
+    point = statistic(np.arange(n_units))
+    reps = pd.DataFrame([statistic(rng.integers(0, n_units, n_units)) for _ in range(n_boot)])
+    return point, reps
+
+
+def interval(reps, name, alpha=0.05):
+    low, high = np.nanquantile(reps[name], [alpha / 2, 1 - alpha / 2])
+    return float(low), float(high)
+
+
 def confidence_intervals(result, n_boot=2000, seed=42, alpha=0.05):
     """Her alt grup için macro F1 ve %95 GA; seçili grup çiftleri için F1 farkı ve GA.
 

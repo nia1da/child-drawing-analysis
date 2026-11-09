@@ -70,6 +70,10 @@ def evaluate(df, experiment, model_name=None, size=None, split="test", root=ROOT
     if model_name is None or size is None:
         model_name, size = parse_experiment(experiment)
     table = df[df.bolum == split]
+    saved = f"{output_dir}/tahminler/{experiment}_{split}.csv"
+    if split == "test" and not quick and os.path.exists(saved):
+        # Test seti sonuçlara göre tekrar tekrar bakılmasın diye (docs/plan_test_metrikleri.md)
+        raise FileExistsError(f"{saved} zaten var; test tahminleri bir kez üretilir, üzerine yazılmaz.")
     num_workers = 2
     if quick:
         table = table.groupby("duygu", group_keys=False).sample(n=QUICK_SAMPLES, random_state=42)
