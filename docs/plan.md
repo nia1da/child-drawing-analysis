@@ -26,8 +26,7 @@ Hedef rapor: `docs/rapor_taslagi.md`. Durum 2026-11-10 itibarıyla.
   belirlendi ve commit edildi (2026-10-21). Metin rapordaki "Detay" yerine "Çizgi miktarı" (toplam çizgi uzunluğu,
   iskelet) 2026-11-10'da uygulandı (`docs/plan_cizgi_miktari.md`, dogrulayici GEÇTİ). Açık iş kalmadı.
 - **3. Çizim yaşı ve görev uyumu:** Duygu sınıflandırıcısı (convnext_tiny, val F1 0.8095) bu aşamanın **erken yapılmış
-  bir parçası**; 2026-10-19'da donduruldu. Henüz yapılmayanlar:
-  - sınıf düzeyi tahmini;
-
-  Görev uyumu ve mutlu–üzgün ayrışma rapora bağlandı (`docs/plan_gorev_uyumu.md` adım 1–5, dogrulayici GEÇTİ, 2026-10-21);
-  test metrikleri ölçüldü ve belgelendi (adım 6, `docs/plan_test_metrikleri.md`, dogrulayici GEÇTİ, 2026-11-10).
+  bir parçası**; 2026-10-19'da donduruldu. Görev uyumu ve mutlu–üzgün ayrışma rapora bağlandı
+  (`docs/plan_gorev_uyumu.md` adım 1–5, dogrulayici GEÇTİ, 2026-10-21); test metrikleri ölçüldü ve belgelendi (adım 6,
+  `docs/plan_test_metrikleri.md`, dogrulayici GEÇTİ, 2026-11-10). Henüz yapılmayan tek parça: **sınıf düzeyi tahmini**
+  (rapor taslağında "sınıf düzeyi tahmini" satırı; planlanmadı, klinisyen geri bildirimine kadar bekleyebilir).

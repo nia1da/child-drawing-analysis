@@ -11,7 +11,7 @@ Kayıt: C-0142 | Sınıf: 3 | Cinsiyet: K | Ziyaret: 2 (08.10.2026)
 ═══════════════════════════════════════════════════════════════
 
 ▌ÇİZİM MODÜLÜ                    Durum: Aktif | Sürüm 0.3
-  Normlar: KIDO (n=5.430, Şanlıurfa, 1–8. sınıf)
+  Normlar: KIDO (Şanlıurfa, 1–8. sınıf); ölçümler train n=7.842, model skorları val n=1.386
   Protokol kontrolü: tamam | Kalite kontrolü: iki çizim de geçti
 
   ── Mutluluk çizimi ──────────────────────────────────────────
@@ -19,7 +19,8 @@ Kayıt: C-0142 | Sınıf: 3 | Cinsiyet: K | Ziyaret: 2 (08.10.2026)
     Figür: 2 (1 yetişkin, 1 çocuk) | Mekân: iç mekân, muhtemelen mutfak
     Nesneler: tencere, kaşık, masa, pencere
     Eylem: çocuk figürü tencerede kahverengi bir şeyi karıştırıyor
-  Gelişimsel konum: tahmini sınıf 3,4 (gerçek 3) → tipik aralıkta
+  Sınıf düzeyi tahmini (henüz yok; dil taslak, ⚠ verilmez): çizim özellikleri 3,4. sınıf çizimlerine
+    benziyor (kayıtlı sınıf 3)
   Özellikler (3. sınıf, mutluluk normu, yüzdelik):
     Doluluk 58 | Renk sayısı 71 | Renklilik 64 | Koyu ton 22 | Çizgi miktarı 49
   Görev uyumu (mutlu): modelin bu çizimi KIDO'daki "mutlu" görevi çizimlerine benzetme
@@ -30,9 +31,11 @@ Kayıt: C-0142 | Sınıf: 3 | Cinsiyet: K | Ziyaret: 2 (08.10.2026)
 
   ── Üzüntü çizimi ────────────────────────────────────────────
   Sahne: Figür: 1 (çocuk) | Mekân: belirsiz | Nesneler: yok
-  Gelişimsel konum: tahmini sınıf 2,1 (gerçek 3) → tipik aralıkta
+  Sınıf düzeyi tahmini (henüz yok): çizim özellikleri 2,1. sınıf çizimlerine benziyor (kayıtlı sınıf 3)
   Özellikler (3. sınıf, üzüntü normu, yüzdelik):
-    Doluluk 4 ⚠ | Renk sayısı 9 | Renklilik 12 | Koyu ton 61 | Çizgi miktarı 6 ⚠
+    Doluluk 4 ⚠ | Renk sayısı 9 * | Renklilik 12 * | Koyu ton 61 * | Çizgi miktarı 6 ⚠
+    * çizim çok küçük, bu ölçümler güvenilir değil. Küçük çizimde doluluk ve çizgi miktarı aynı olguyu
+      yansıtır; iki ayrı bulgu değildir.
   Görev uyumu (üzgün): modelin bu çizimi KIDO'daki "üzgün" görevi çizimlerine benzetme
     derecesi, karşılaştırma grubunun 58. yüzdelik diliminde.
     Karşılaştırma grubu: ilkokul (1–4. sınıf) üzgün normu, n=346 (KIDO val)
