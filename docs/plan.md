@@ -40,11 +40,12 @@ Plan: `docs/plan_el_yazisi.md` (taslak v2; denetleyici bulguları işlendi, kull
 |---|---|---|---|
 | H0. Veri seçimi ve EDA | Malaysian EDA, FD-LEX EDA (denetim + ön fizibilite) | EDA belgeleri kabul edildi | **bitti** (`docs/handwriting_dataset_analysis.md`, `docs/fd_lex_dataset_analysis.md`) |
 | H1. İzin ve yerel koruma (A0) | Kullanım izni sorusu, yerel-only koruma, commit öncesi veri denetimi | İzin yanıtı kayıtlı; koruma testleri | **koruma ve denetim bitti** (`paths.py`, pre-commit kancası, testler); **izin yanıtı bekleniyor** |
+| H1c. Pilot hazırlığı, rapor tasarımı, fizibilite | Bilimsel temel, 20 öğrencilik pilot protokolü ve kodu (izne bağlı), sentetik örnek rapor, referans/ML fizibilitesi, bölme dondurma | Belgeler ve kod hazır; bölme dondurulmuş | **bitti** (2026-11-25); pilot izin sonrası |
 | H1b. Prototip (sentetik) | Ölçek/eğiklik, çizgi-kutu-XXX ayrıştırma, el yazısı maskesi, satır segmentasyonu, bileşen boyutu, hiza, sayfa kullanımı, görselleştirme | Sentetik testler geçiyor; sonuçlar görselleştirildi (`docs/el_yazisi_prototip.md`) | **bitti** (2026-11-25); gerçek sayfa pilotu izin sonrası |
 | H2. Çıkarma ve bölme (A1, A7) | Kayıpsız sayfa çıkarma, manifest, tekilleştirme, 27 belirsiz öğrencinin görev/zaman eşlemesi, öğrenci bazlı bölme dondurma | Manifest 5656 satır, `splits.csv` dondurulmuş | başlamadı (plan onayı bekliyor) |
 | H3. Normalizasyon ve ayrıştırma (A2–A4) | Fiziksel ölçek, çizgi/kod kutusu/XXX maskeleri, yazı alanı ve satır segmentasyonu, elle işaretli 60 sayfa | Maske ve segmentasyon kabul ölçütleri geçti | başlamadı |
 | H4. Özellikler ve dayanıklılık (A5, A6) | Harf boyutu, satır hizası, eğim, sayfa kullanımı; çözünürlük/kalem/tarama dayanıklılığı | Her özellik "kararlı / koşullu / dışlandı" | başlamadı |
 | H5. Referans dağılımlar ve rapor | Sınıf x görev x zaman referansları (train), betimleyici rapor | "Bu örneklemde akranlara göre" raporu | başlamadı |
 
-Kapsam dışı: kelime aralığı, okunabilirlik skoru, `Rating` etiketi, model eğitimi. Malaysian veri seti yardımcı olarak korunur.
+Kapsam dışı: kelime aralığı, okunabilirlik tahmini, disgrafi sınıflandırması, psikolojik risk skoru, `Rating` etiketi, model eğitimi, yeni veri seti araştırması. **Bilimsel hedef** (2026-11-25): grafomotor gelişimle ilişkili biçimsel ve görsel-mekânsal özellikleri ölçmek, referans gruplarıyla karşılaştırmak, uzmana açıklanabilir rapor sunmak (`docs/el_yazisi_bilimsel_temel.md`). Malaysian veri seti **arşiv**. Transkriptler gelecek çalışma (`docs/el_yazisi_gelecek_calisma.md`).
 

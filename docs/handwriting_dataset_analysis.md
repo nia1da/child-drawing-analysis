@@ -1,3 +1,5 @@
+> **ARŞİV (2026-11-25):** el yazısı modülü yalnız FD-LEX Scriptoria ile sürüyor; bu Malaysian EDA belgesi ve `notebooks/handwriting_eda.ipynb` arşivdir (silinmez, kullanılmaz). Karar: `docs/kararlar.md`.
+
 # El yazısı veri seti analizi (EDA)
 
 Tarih: 2026-11-25. Notebook: `notebooks/handwriting_eda.ipynb` (çıktılar içinde). Veri: `data/handwriting/raw/` (git'e girmez).

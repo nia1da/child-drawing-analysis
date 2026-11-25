@@ -14,7 +14,7 @@ USER_LINE = re.compile(r"Benutzer:\s*\S+")
 FORBIDDEN_PATH = re.compile(r"(^|/)data/handwriting/")
 # desenleri/örnek ihlalleri içeren dosyalar ve eski KIDO arşiv notebook'u (herkese açık KIDO görüntüleri, base64 gürültüsü yanlış pozitif verir)
 BINARY_EXT = (".png", ".jpg", ".jpeg", ".pdf", ".zip", ".xlsx", ".tif", ".tiff")
-BINARY_ALLOWED = ("docs/el_yazisi_prototip/",)  # yalnız sentetik demo görselleri
+BINARY_ALLOWED = ("docs/el_yazisi_prototip/", "docs/el_yazisi_ornek_rapor/")  # yalnız sentetik demo görselleri
 SKIP = {"tools/check_no_student_data.py", "tests/test_check_no_student_data.py", "notebooks/grad_proj.ipynb"}
 
 
@@ -47,7 +47,7 @@ def main():
             continue
         if name.lower().endswith(BINARY_EXT):  # ikili dosyalar: yalnız sentetik demo klasörüne izin var, içerik taranamaz
             if not name.startswith(BINARY_ALLOWED):
-                bad.append((name, "görüntü/PDF/tablo dosyası staged (izinli klasör: docs/el_yazisi_prototip/)"))
+                bad.append((name, "görüntü/PDF/tablo dosyası staged (izinli klasörler: docs/el_yazisi_prototip/, docs/el_yazisi_ornek_rapor/)"))
             continue
         bad += scan_text(name, staged_text(name))
     for name, why in bad:

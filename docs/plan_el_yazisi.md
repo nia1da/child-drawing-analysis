@@ -1,5 +1,7 @@
 # Plan: El yazısı modülü, önişleme ve özellik çıkarma (FD-LEX Scriptoria)
 
+**Güncel bilimsel hedef (2026-11-25):** grafomotor gelişimle ilişkili biçimsel/görsel-mekânsal özellikleri ölçmek, referanslarla karşılaştırmak, açıklanabilir uzman raporu üretmek (`docs/el_yazisi_bilimsel_temel.md`); statik görüntüden motor beceri ölçtüğümüz iddia edilmez. Yalnız FD-LEX (Malaysian arşiv). Fizibilite: `docs/el_yazisi_arastirma_fizibilite.md`; pilot: `docs/el_yazisi_pilot_protokolu.md`; rapor: `docs/el_yazisi_ornek_rapor.md`; transkriptler (gelecek): `docs/el_yazisi_gelecek_calisma.md`.
+
 Durum: **plan v2 genel olarak kabul edildi (2026-11-25)**; öncelik çalışan prototip (`docs/el_yazisi_prototip.md`, sentetik görüntülerle). Gerçek veri izne bağlı; 100 sayfalık elle işaretleme ve kapsamlı istatistiksel doğrulama henüz başlamadı. Kabul ölçütleri **kesinleşmedi** (prototip belgesinde taslak tablo).
 
 **Kabul edilen kararlar (2026-11-25):** FD-LEX ana, Malaysian yardımcı; çalışma çözünürlüğü **150 dpi**, sonra 200 ve 300 dpi ile duyarlılık testi; **70/15/15** öğrenci bazlı tabakalı bölme; **kayıpsız PNG** çıkarma (`extracted/`); `Rating` kullanılmaz; **izin geçidi** (A3'e izin yanıtı olmadan geçilmez); OneDrive klasör yedekleme ayarını kullanıcı elle kontrol edecek. Yeni: pilot (10–20 gerçek sayfa) izin sonrası; önce prototip sonuçları görselleştirilerek değerlendirilir.

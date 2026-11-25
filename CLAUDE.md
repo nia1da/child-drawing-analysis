@@ -23,11 +23,13 @@
   benzerliğini ölçen **görev uyumu** ve aynı çocuğun iki çizimini karşılaştıran **mutlu–üzgün ayrışma** için kullanılır.
   Çocuğun ruh hali olarak yorumlanmaz.
 - Gerçek klinik çocuk verisi asla bu repoya girmez.
-- **El yazısı modülü (prototip, yalnız sentetik görüntülerle; `src/handwriting/`):** ana veri seti FD-LEX Scriptoria (kullanım iznine bağlı), yardımcı Malaysian.
+- **El yazısı modülü (prototip, yalnız sentetik görüntülerle; `src/handwriting/`):** tek veri seti FD-LEX Scriptoria (kullanım iznine bağlı); Malaysian arşiv.
   Plan `docs/plan_el_yazisi.md`, EDA `docs/fd_lex_dataset_analysis.md` ve `docs/handwriting_dataset_analysis.md`.
   **FD-LEX verisi ve türevleri (sayfa görüntüleri, özellik tabloları, öğrenci kodları) izin netleşmeden Drive, Colab ya da GitHub'a
   yüklenmez; yalnız yerel `data/handwriting/fd_lex/`.** Commit'ten önce notebook çıktıları (tarama görüntüleri, öğrenci kodları) temizlenir.
-  Kelime aralığı ve okunabilirlik skoru kapsam dışı; `Rating` etiket değil.
+  **Bilimsel hedef:** grafomotor gelişimle ilişkili biçimsel/görsel-mekânsal özellikleri ölçmek, referanslarla karşılaştırmak, uzmana açıklanabilir rapor sunmak;
+  statik görüntüden motor beceriyi ölçtüğümüzü ve BHK vb. puan ürettiğimizi iddia etmeyiz (`docs/el_yazisi_bilimsel_temel.md`). Kapsam dışı: okunabilirlik tahmini, disgrafi sınıflandırması,
+  risk skoru, kelime aralığı, yeni veri seti, v1'de ML modeli; `Rating` etiket değil. Yalnız FD-LEX (Malaysian arşiv). Gerçek sayfa okuyan kod `paths.require_permission` geçidinden geçer (`permission.json`); gerçek PDF'ler için `render_page` doğrudan çağrılmaz, yalnız `pdf_io.load_page` / `pilot.run_pilot` kullanılır.
 
 ## Çalışma ortamı
 - Kod yerelde (Mac ya da Windows) yazılır ve test edilir; eğitim Colab'da (T4) yapılır.
@@ -123,7 +125,7 @@
   değil: küçük çizimde ⚠ alır (doluluk gibi); metin rapor bunun tek olgu olduğunu notla söyler.
 - `src/handwriting/`: El yazısı prototipi (çizim modülünden bağımsız; `src.config`'i kullanmaz): `paths.py` (sabitler, Colab/Drive koruması),
   `normalize.py`, `masks.py`, `segment.py`, `features.py`, `pipeline.analyze_page`, `synthetic.py` (sentetik sayfalar), `viz.py`, `demo.py`.
-  Ayrıntı `docs/el_yazisi_prototip.md`. Testler sentetik (`tests/test_handwriting.py`); gerçek FD-LEX verisi izne bağlı, yalnız yerel.
+  Ayrıntı `docs/el_yazisi_prototip.md`; ayrıca `pdf_io.py` (PDF render + metin katmanı kutuları), `splits.py` (öğrenci bazlı bölme), `pilot.py`, `report.py`, `example_report.py`. Testler sentetik (`tests/test_handwriting*.py`); gerçek FD-LEX verisi izne bağlı, yalnız yerel.
   `tools/check_no_student_data.py` + `tools/install_hook.py`: commit öncesi öğrenci verisi denetimi (pre-commit kancası; her klonda `python tools/install_hook.py`).
 - `notebooks/colab.ipynb`: güncel Colab notebook'u; repoyu clone/pull eder, sadece `src/` fonksiyonlarını çağırır.
 - `notebooks/grad_proj.ipynb`: arşiv (ilk keşif ve denemeler). Çıktıları eski sonuçların kaynağı, silinmemeli

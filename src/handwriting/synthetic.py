@@ -102,7 +102,7 @@ def _draw_strokes(draw, strokes, scale, fill=255):
         draw.line(xy, fill=fill, width=max(1, int(round(wmm * scale / 25.4))), joint="curve")
 
 
-def render(layout, dpi=150, pen="blue", skew_deg=0.0, noise=3.0, gradient=8.0, jpeg_quality=None, seed=0):
+def render(layout, dpi=150, pen="blue", skew_deg=0.0, noise=3.0, gradient=8.0, jpeg_quality=None, seed=0, bake_overlay=True):
     """Piksele çevirir. Döner: (rgb uint8, hw_truth bool, overlay_boxes_px [telif satırı + XXX], info)."""
     rng = np.random.default_rng(seed)
     W, H = (int(round(m * dpi / 25.4)) for m in A4_MM)
@@ -134,6 +134,8 @@ def render(layout, dpi=150, pen="blue", skew_deg=0.0, noise=3.0, gradient=8.0, j
     yy = np.linspace(-gradient, gradient, H)[:, None, None]
     paper = paper + yy + rng.normal(0, noise, paper.shape)
     img = Image.fromarray(np.clip(paper, 0, 255).astype(np.uint8))
+    if not bake_overlay:  # PDF üretiminde telif satırı/XXX metin katmanı olarak eklenir (make_pdf)
+        return np.asarray(img), hw_cov > 0.5, [], dict(dpi=dpi, pen=pen, skew_deg=skew_deg)
     # vektör katmanı (tarama dışı): telif satırı ve XXX
     d = ImageDraw.Draw(img)
     ft = ImageFont.load_default(size=max(8, int(2.6 * dpi / 25.4)))
@@ -148,3 +150,22 @@ def render(layout, dpi=150, pen="blue", skew_deg=0.0, noise=3.0, gradient=8.0, j
         import io
         b = io.BytesIO(); img.save(b, "JPEG", quality=jpeg_quality); img = Image.open(b).convert("RGB")
     return np.asarray(img), hw_cov > 0.5, boxes, dict(dpi=dpi, pen=pen, skew_deg=skew_deg)
+
+
+def make_pdf(path, layout, dpi=150, rotation=0, **render_kw):
+    """Sentetik tek sayfalık A4 PDF: tarama görüntüsü + metin katmanı (telif satırı, XXX), FD-LEX yapısını taklit eder."""
+    import io
+    import pymupdf
+    rgb, truth, _, info = render(layout, dpi=dpi, bake_overlay=False, **render_kw)
+    buf = io.BytesIO(); Image.fromarray(rgb).save(buf, "PNG")
+    doc = pymupdf.open(); page = doc.new_page(width=595.28, height=841.89)
+    page.insert_image(page.rect, stream=buf.getvalue())
+    pt = 72 / 25.4
+    page.insert_text((12 * pt, 290 * pt), "© synthetic footer text", fontsize=7, color=(0.25, 0.25, 0.25))
+    if layout.xxx_mm:
+        x0, y0, x1, y1 = layout.xxx_mm
+        page.insert_text((x0 * pt, y1 * pt), "XXX", fontsize=(y1 - y0) * pt * 1.1, color=(0, 0, 0))
+    if rotation:
+        page.set_rotation(rotation)
+    doc.save(str(path)); doc.close()
+    return truth, info

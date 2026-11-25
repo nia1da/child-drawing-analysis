@@ -1,0 +1,225 @@
+{
+ "surum": "hw-0.1",
+ "baglam": {
+  "veri": "SENTETİK ÖRNEK, gerçek öğrenci değil",
+  "referans": "YAPAY referans (100 sentetik sayfa)",
+  "sınıf": "5. sınıf (örnek)",
+  "görev": "Bericht (örnek)",
+  "ölçüm zamanı": "MZP3 (örnek); önceki: MZP1"
+ },
+ "olcumler": [
+  {
+   "ad": "xheight_mm",
+   "etiket": "Yazı boyutu (gövde yüksekliği)",
+   "birim": "mm",
+   "deger": 4.657,
+   "ne_olcer": "Satırlardaki gövde bileşenlerinin ortanca yüksekliği, sayfanın fiziksel ölçeğine göre.",
+   "ne_ifade_etmez": "Harfin gerçek x-yüksekliği değil (bitişik yazıda bileşen birden çok harf olabilir); kalem kalınlığını da içerir; motor beceriyi ölçmez.",
+   "yuzdelik": 100.0,
+   "uc": true
+  },
+  {
+   "ad": "xheight_cv_lines",
+   "etiket": "Boyut tutarlılığı (satırlar arası)",
+   "birim": "CV",
+   "deger": 0.03,
+   "ne_olcer": "Satırların ortanca yükseklikleri arasındaki değişim katsayısı.",
+   "ne_ifade_etmez": "Satır sayısı azsa kararsız; tutarsızlığın nedenini (dikkat, kâğıt, görev) söylemez.",
+   "yuzdelik": 17.0,
+   "uc": false
+  },
+  {
+   "ad": "comp_h_iqr_ratio",
+   "etiket": "Bileşen boyutu dağılımı",
+   "birim": "IQR/medyan",
+   "deger": 0.321,
+   "ne_olcer": "Bileşen yüksekliklerinin sayfa içi yayılımı (oransal tutarlılık).",
+   "ne_ifade_etmez": "Bitişik/ayrık yazı biçimine, noktalama ve ince uzantılara duyarlı.",
+   "yuzdelik": 35.0,
+   "uc": false
+  },
+  {
+   "ad": "baseline_offset_mm_sd",
+   "etiket": "Satır hizası değişkenliği",
+   "birim": "mm",
+   "deger": 0.281,
+   "ne_olcer": "Taban çizgisinin basılı çizgiye uzaklığının satırlar arası standart sapması.",
+   "ne_ifade_etmez": "Çizgiye oturmanın düzenliliği; yazının kâğıt çizgisine uyumu ve öğretim alışkanlığı etkiler.",
+   "yuzdelik": 100.0,
+   "uc": true
+  },
+  {
+   "ad": "baseline_wobble_mm_median",
+   "etiket": "Taban çizgisi dalgalanması (satır içi)",
+   "birim": "mm",
+   "deger": 0.654,
+   "ne_olcer": "Bir satırda gövde bileşenlerinin alt kenarlarının doğru etrafındaki sağlam sapması.",
+   "ne_ifade_etmez": "Statik izdir; kalem hareketinin titremesini doğrudan ölçmez.",
+   "yuzdelik": 100.0,
+   "uc": true
+  },
+  {
+   "ad": "baseline_slope_deg_median",
+   "etiket": "Taban çizgisi eğimi",
+   "birim": "derece",
+   "deger": -0.32,
+   "ne_olcer": "Satırların çizgiye göre ortanca eğimi (+: sağa aşağı).",
+   "ne_ifade_etmez": "Sayfa eğikliği düzeltildikten sonra; harf eğimi (italik) değil.",
+   "yuzdelik": 7.0,
+   "uc": false
+  },
+  {
+   "ad": "left_margin_mm",
+   "etiket": "Sol kenar boşluğu",
+   "birim": "mm",
+   "deger": 18.796,
+   "ne_olcer": "Sayfa kenarından yazının başladığı yere uzaklık.",
+   "ne_ifade_etmez": "Sayfa organizasyonu; tarama kırpması ve yönerge etkiler.",
+   "yuzdelik": 13.5,
+   "uc": false
+  },
+  {
+   "ad": "used_frac",
+   "etiket": "Kullanılan satır oranı",
+   "birim": "oran",
+   "deger": 0.348,
+   "ne_olcer": "Yazı içeren satır / sayfadaki basılı çizgi.",
+   "ne_ifade_etmez": "Yazı uzunluğuna bağlıdır; tek başına kötü/iyi demek değil.",
+   "yuzdelik": 49.0,
+   "uc": false
+  },
+  {
+   "ad": "mean_line_fill_frac",
+   "etiket": "Satır doluluğu",
+   "birim": "oran",
+   "deger": 0.836,
+   "ne_olcer": "Yazılı satırların yazı alanı genişliğinin ne kadarını kapladığı.",
+   "ne_ifade_etmez": "Satır sonu, paragraf ve bitiş satırlarını da içerir.",
+   "yuzdelik": 95.0,
+   "uc": false
+  }
+ ],
+ "degisim": [
+  {
+   "ad": "xheight_mm",
+   "etiket": "Yazı boyutu (gövde yüksekliği)",
+   "birim": "mm",
+   "onceki": 3.852,
+   "simdiki": 4.657,
+   "fark": 0.804,
+   "esik": 0.4,
+   "yorum": "güvenilir değişim eşiğini aşıyor"
+  },
+  {
+   "ad": "xheight_cv_lines",
+   "etiket": "Boyut tutarlılığı (satırlar arası)",
+   "birim": "CV",
+   "onceki": 0.044,
+   "simdiki": 0.03,
+   "fark": -0.015,
+   "esik": null,
+   "yorum": "eşik tanımsız: fark yorumlanmaz"
+  },
+  {
+   "ad": "comp_h_iqr_ratio",
+   "etiket": "Bileşen boyutu dağılımı",
+   "birim": "IQR/medyan",
+   "onceki": 0.208,
+   "simdiki": 0.321,
+   "fark": 0.113,
+   "esik": null,
+   "yorum": "eşik tanımsız: fark yorumlanmaz"
+  },
+  {
+   "ad": "baseline_offset_mm_sd",
+   "etiket": "Satır hizası değişkenliği",
+   "birim": "mm",
+   "onceki": 0.163,
+   "simdiki": 0.281,
+   "fark": 0.118,
+   "esik": null,
+   "yorum": "eşik tanımsız: fark yorumlanmaz"
+  },
+  {
+   "ad": "baseline_wobble_mm_median",
+   "etiket": "Taban çizgisi dalgalanması (satır içi)",
+   "birim": "mm",
+   "onceki": 0.288,
+   "simdiki": 0.654,
+   "fark": 0.366,
+   "esik": 0.15,
+   "yorum": "güvenilir değişim eşiğini aşıyor"
+  },
+  {
+   "ad": "baseline_slope_deg_median",
+   "etiket": "Taban çizgisi eğimi",
+   "birim": "derece",
+   "onceki": -0.037,
+   "simdiki": -0.32,
+   "fark": -0.283,
+   "esik": null,
+   "yorum": "eşik tanımsız: fark yorumlanmaz"
+  },
+  {
+   "ad": "left_margin_mm",
+   "etiket": "Sol kenar boşluğu",
+   "birim": "mm",
+   "onceki": 21.844,
+   "simdiki": 18.796,
+   "fark": -3.048,
+   "esik": null,
+   "yorum": "eşik tanımsız: fark yorumlanmaz"
+  },
+  {
+   "ad": "used_frac",
+   "etiket": "Kullanılan satır oranı",
+   "birim": "oran",
+   "onceki": 0.348,
+   "simdiki": 0.348,
+   "fark": 0.0,
+   "esik": null,
+   "yorum": "eşik tanımsız: fark yorumlanmaz"
+  },
+  {
+   "ad": "mean_line_fill_frac",
+   "etiket": "Satır doluluğu",
+   "birim": "oran",
+   "onceki": 0.757,
+   "simdiki": 0.836,
+   "fark": 0.079,
+   "esik": null,
+   "yorum": "eşik tanımsız: fark yorumlanmaz"
+  }
+ ],
+ "kalite": {
+  "guvenilirlik": "yüksek",
+  "nedenler": [],
+  "bayraklar": {
+   "skew_deg": 0.25,
+   "dpi": 150.0,
+   "no_rules": false,
+   "rules_filled": 0,
+   "rule_spacing_off": false,
+   "rule_grid_irregular": false,
+   "code_box_found": true,
+   "overlay_masked_px": 1518,
+   "bridged_px": 426,
+   "speckle_px": 7,
+   "pen_colored_frac": 0.9940653661583894,
+   "pen_blue_share": 1.0,
+   "dark_outside_roi_px": 2086
+  }
+ },
+ "sinirlamalar": [
+  "Ölçümler tek bir statik görüntünün biçimsel özellikleridir; motor beceriyi, yazma hızını ya da hareket kalitesini doğrudan ölçmez.",
+  "Akademik el yazısı ölçeklerinin (ör. BHK) puanını üretmez ve onlarla eşdeğer değildir.",
+  "Referans grubu, bu çalışmanın örneklemidir (sınıf, görev ve ölçüm zamanına göre); popülasyon ya da klinik norm değildir.",
+  "Referansın uç bölgesi bir değerlendirme değil, ölçümün ve görüntünün kontrol edilmesi için işarettir; tanı ya da gelişimsel yorum içermez.",
+  "Tarama çözünürlüğü, kalem ve kâğıt koşulları ölçümleri etkileyebilir; güvenilirlik bölümü bu sayfaya özgü uyarıları listeler."
+ ],
+ "referans": {
+  "n": 100,
+  "yeterli": true,
+  "not_": null
+ }
+}

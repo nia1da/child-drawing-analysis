@@ -19,6 +19,9 @@ Son güncelleme: 2026-11-25. Aşamalar: `docs/plan.md`; kararlar: `docs/kararlar
   ve ayrışma tamam. Performans iyileştirmesi uçtan uca ilk sistem görüldükten sonra.
 
 ## El yazısı modülü (2026-11-25)
+- **Bilimsel hedef (netleşti):** grafomotor gelişimle ilişkili biçimsel/görsel-mekânsal özellikleri ölçmek, referanslarla karşılaştırmak, uzmana açıklanabilir rapor sunmak; motor beceriyi doğrudan ölçtüğümüzü ve BHK vb. puan ürettiğimizi iddia etmeyiz; okunabilirlik, disgrafi sınıflandırması, risk skoru kapsam dışı. **Yalnız FD-LEX; Malaysian arşiv.**
+- **Son iş:** `docs/el_yazisi_bilimsel_temel.md` (özellik–kaynak haritası; BHK madde düzeyi doğrulanamadı), `docs/el_yazisi_pilot_protokolu.md` + `src/handwriting/pilot.py` (20 öğrenci, izin geçidi `permission.json`; çalıştırılmadı),
+  `docs/el_yazisi_arastirma_fizibilite.md` (5 soru; v1'de ML yok), `docs/el_yazisi_ornek_rapor.md` (sentetik örnek rapor + işaretli bölgeler), `docs/el_yazisi_gelecek_calisma.md` (transkriptler), öğrenci bazlı bölme donduruldu (hash `docs/kararlar.md`'de).
 - **Karar:** ana veri seti **FD-LEX Scriptoria** (kullanım iznine bağlı); Malaysian yardımcı olarak korunur. EDA belgeleri: `docs/fd_lex_dataset_analysis.md`,
   `docs/handwriting_dataset_analysis.md`. Plan: `docs/plan_el_yazisi.md` (taslak v2: denetleyici bulguları işlendi; kullanıcı onayı bekliyor; uygulama başlamadı).
 - **Prototip (2026-11-25):** `src/handwriting/` sentetik görüntülerle çalışıyor (`docs/el_yazisi_prototip.md`: ölçek/eğiklik, çizgi-kod kutusu-XXX ayrıştırma, el yazısı maskesi, satır segmentasyonu, bileşen boyutu, hiza, sayfa kullanımı, görselleştirme, 23 test); pre-commit veri denetimi kurulu. Kabul edilen kararlar: 150 dpi, 70/15/15 öğrenci bazlı bölme, kayıpsız çıkarma, izin geçidi. **Henüz yok:** gerçek sayfa pilotu (izin), 100 sayfalık işaretleme, istatistiksel doğrulama, A1 (çıkarma/manifest), A7 (bölme dondurma).
@@ -28,7 +31,7 @@ Son güncelleme: 2026-11-25. Aşamalar: `docs/plan.md`; kararlar: `docs/kararlar
   (çalışma çözünürlüğü, bölme, elle işaretleme, kabul ölçütleri); (4) belirsiz görev/zaman: 27 öğrenci + tekrar eden sayfanın öğrencisi (tekilleştirince 5 sayfa) = **28**; çözünürlük–sınıf ilişkisi (planda ele alındı, v2).
 
 ## Sıradaki adım
-0. **El yazısı:** prototip sonuçlarının kullanıcıyla görsel değerlendirmesi; FD-LEX izin yanıtı; izin gelirse 10–20 sayfalık yerel pilot, sonra plan A1/A7/A3. A3'e (elle işaretleme) izin yanıtı gelmeden geçilmez.
+0. **El yazısı:** FD-LEX izin yanıtı (`permission.json` kullanıcıdan); izin gelirse 20 öğrencilik pilot (`docs/el_yazisi_pilot_protokolu.md`), gözlenen sorunlara göre düzeltme, sonra plan A1 (kayıpsız çıkarma, manifest), elle işaretleme (A3) ve ölçüm güvenilirliği. Rapor tasarımı ve fizibilite belgeleri uzman/kullanıcı geri bildirimine hazır. A3'e izin gelmeden geçilmez.
 1. **İlk uçtan uca dilim** planı (plan modunda): ortak modül JSON sözleşmesi (`modul`, durum, ölçümler, kalite, not), Gradio
    arayüz iskeleti (taslak: görüntü modülünü gösterir), Yazı ve Konuşma modüllerinin ilk ölçümleri. Plan.md'deki aşama sırası
    (arayüz aşama 7'deydi) bu plan onaylanınca güncellenir. Kullanıcı Yazı/Konuşma veri setlerini inceliyor.

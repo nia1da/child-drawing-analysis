@@ -14,7 +14,11 @@ Plan: `docs/plan_el_yazisi.md`. 100 sayfalık elle işaretleme ve kapsamlı ista
 | `features.py` | Bileşen boyutu ve tutarlılığı, taban çizgisi uzaklığı/eğimi/dalgalanması, sayfa kullanımı ve yazı yoğunluğu, kalite bayrakları |
 | `pipeline.py` | `analyze_page(rgb, dpi, overlay_boxes)` tek giriş noktası |
 | `synthetic.py` | Bilinen gerçek değerli sentetik A4 sayfalar (mm cinsinden düzen, sonra dpi/kalem/eğiklik/gürültü/JPEG ile render) |
-| `viz.py`, `demo.py` | Dört panelli görselleştirme; `python -m src.handwriting.demo` |
+| `viz.py`, `demo.py` | Beş panelli karşılaştırmalı görselleştirme (orijinal, önişlenmiş, maskeler, satırlar, ölçümler), rapor için işaretli bölgeler (`annotate_regions`); `python -m src.handwriting.demo` |
+| `pdf_io.py` | PDF'ten sayfa render (dönüşlü sayfalar dahil) ve metin katmanı kutuları (XXX, telif, kod). `render_page` saf fonksiyondur (sentetik PDF testleri için, **izin geçidi yok**: gerçek PDF'ler için çağrılmaz); gerçek PDF için `load_page` izin geçidinden geçer |
+| `splits.py` | Öğrenci bazlı tabakalı bölme + dpi dengesi kuralı (yalnız meta veri); `splits.csv` yerel |
+| `pilot.py` | 20 öğrencilik seçim, `run_pilot` (izin gerekir), otomatik başarısızlık işaretleri (`docs/el_yazisi_pilot_protokolu.md`) |
+| `report.py`, `example_report.py` | Uzman raporu (metin + JSON) ve sentetik örnek (`docs/el_yazisi_ornek_rapor.md`) |
 | `tests/test_handwriting.py` | 23 sentetik test (yol koruması [Colab, Drive, OneDrive, MyDrive], ölçek, eğiklik işareti, satırlar, el yazısı maskesi sızıntısı, dpi/kalem/JPEG dayanıklılığı, atlanan satır, geniş kod kutusu, eksik çizgi tamamlama, aralık bayrakları, `regularize` durumları, sıra korunumu, boş sayfa) |
 | `tools/check_no_student_data.py`, `tools/install_hook.py` | Commit öncesi veri denetimi (öğrenci kodu, gömülü görüntü, kapak kullanıcı satırı, `data/handwriting/` yolu; **görüntü/PDF/zip/xlsx dosyaları yalnız `docs/el_yazisi_prototip/` altında** izinli); `python tools/install_hook.py` ile pre-commit kancası (kurulu). `notebooks/grad_proj.ipynb` (eski KIDO arşivi, base64 gürültüsü) muaf |
 
@@ -55,6 +59,8 @@ Aynı sayfa farklı koşullarda (`seed=2`, gerçek mürekkep x-yüksekliği 3,45
 Okuma: 150 dpi'de 1 piksel = 0,17 mm; x-yüksekliği farkları (±0,1–0,2 mm) çoğunlukla bu nicemlemedir. Sayfa kullanımı ve satır sayısı koşullardan etkilenmedi; eğim ve taban uzaklığı ±0,1° ve ±0,1 mm dalgalandı. `ink_density` kalem kalınlığına duyarlı (kurşun 0,014, siyah 0,020, mavi 0,017: tek başına karşılaştırılmamalı).
 
 Görseller (sentetik): `docs/el_yazisi_prototip/sentetik_kolay.png`, `sentetik_zor.png` (önişlenmiş sayfa, maskeler, satırlar ve taban çizgileri, özellik tablosu).
+
+**Hook sınırı:** `docs/el_yazisi_prototip/` ve `docs/el_yazisi_ornek_rapor/` altına konan ikili dosyaların içeriği taranmaz (yalnız sentetik görsellere izin verilir); bu klasörlere gerçek tarama konulmamalıdır.
 
 ## Bu sürümde bulunup düzeltilen sorunlar (sentetik testlerden)
 - Telif satırı ROI'ye giriyordu → metin katmanı kutuları (XXX ve telif satırı) birlikte maskeleniyor (`overlay_boxes`).

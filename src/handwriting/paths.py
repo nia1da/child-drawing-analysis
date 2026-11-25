@@ -4,6 +4,7 @@ FD-LEX verisi (ve türevleri) kullanım izni netleşene kadar yalnız yerel disk
 Colab'da çalışmaz, Drive / OneDrive altındaki bir yola yazılmaz. Bu modül `src.config`'i
 bilerek içe aktarmaz (o Drive yollarını çözer); ortam algısı burada ayrıca ve küçük tutulur.
 """
+import json
 import os
 from pathlib import Path
 
@@ -13,6 +14,7 @@ FD_LEX = REPO / "data" / "handwriting" / "fd_lex"
 WORK_DPI = 150          # çalışma çözünürlüğü (karar 2026-11-25); 200 ve 300 duyarlılık testi için
 RULE_SPACING_MM = 10.8  # basılı çizgi aralığı (EDA, 288 sayfa; tüm sayfalarda doğrulanmadı)
 HW_VERSION = "hw-0.1"   # ölçüm tanımı değişirse artırılır
+PERMISSION_FILE = "permission.json"
 
 # Yol parçalarında bu adlar geçerse veri yolu reddedilir (bulut senkronu / Drive)
 FORBIDDEN_PARTS = ("onedrive", "google drive", "googledrive", "gdrive", "my drive", "mydrive", "drive'ım", "bitirme")
@@ -46,3 +48,17 @@ def fd_lex_dir(path=None):
     """Yerel FD-LEX klasörü (koruma kontrolleriyle). Sentetik testler bu fonksiyonu çağırmaz."""
     require_local()
     return check_data_dir(path or FD_LEX)
+
+
+def require_permission(path=None):
+    """Gerçek FD-LEX sayfalarını okuyan her kod bunu çağırır: kullanım izni dosyası yoksa durur.
+
+    İzin dosyasını yalnız kullanıcı oluşturur: `data/handwriting/fd_lex/permission.json` içinde `{"approved": true, "note": "..."}`.
+    """
+    root = fd_lex_dir(path)
+    f = root / PERMISSION_FILE
+    if not f.exists():
+        raise PermissionError(f"FD-LEX kullanım izni kaydı yok ({f.name}); izin netleşene kadar gerçek sayfalar okunmaz.")
+    if json.loads(f.read_text(encoding="utf-8")).get("approved") is not True:
+        raise PermissionError("FD-LEX kullanım izni onaylı değil (permission.json: approved != true).")
+    return root
