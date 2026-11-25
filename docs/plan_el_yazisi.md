@@ -1,6 +1,11 @@
 # Plan: El yazısı modülü, önişleme ve özellik çıkarma (FD-LEX Scriptoria)
 
-Durum: **taslak v2: denetleyici bulguları işlendi (2026-11-25), kullanıcı onayı bekliyor** (CLAUDE.md iş akışı 1–3). Tarih: 2026-11-25. Henüz kod yazılmadı, model eğitilmedi.
+Durum: **plan v2 genel olarak kabul edildi (2026-11-25)**; öncelik çalışan prototip (`docs/el_yazisi_prototip.md`, sentetik görüntülerle). Gerçek veri izne bağlı; 100 sayfalık elle işaretleme ve kapsamlı istatistiksel doğrulama henüz başlamadı. Kabul ölçütleri **kesinleşmedi** (prototip belgesinde taslak tablo).
+
+**Kabul edilen kararlar (2026-11-25):** FD-LEX ana, Malaysian yardımcı; çalışma çözünürlüğü **150 dpi**, sonra 200 ve 300 dpi ile duyarlılık testi; **70/15/15** öğrenci bazlı tabakalı bölme; **kayıpsız PNG** çıkarma (`extracted/`); `Rating` kullanılmaz; **izin geçidi** (A3'e izin yanıtı olmadan geçilmez); OneDrive klasör yedekleme ayarını kullanıcı elle kontrol edecek. Yeni: pilot (10–20 gerçek sayfa) izin sonrası; önce prototip sonuçları görselleştirilerek değerlendirilir.
+Not: plandaki "Kayıpsız çıkarma: JPEG akışı olduğu gibi (JPG), Flate için PNG" ayrımı korunur; kullanıcı kararı "kayıpsız PNG" Flate sayfalar ve render gereken sayfalar için PNG, JPEG sayfalar için bayt-bayt aynı akış (yeniden sıkıştırmasız) olarak yorumlandı. Farklı istenirse (JPEG'i de PNG'ye çevirmek dosyayı büyütür, kayıpsız ama kaynak SHA eşitliği kaybolur) belirtilmeli.
+
+**Prototip durumu (A0–A5'in sentetik kısmı):** `src/handwriting/` (yol koruması, ölçek/eğiklik, maskeler, satır segmentasyonu, özellikler, görselleştirme), `tools/check_no_student_data.py` + pre-commit kancası, 23+4 sentetik test. Plan adımlarından yapılmayanlar: A1 (gerçek çıkarma, manifest, tekilleştirme), A7 (bölme dondurma), A3 elle işaretleme, A5 profil tabanlı x-yüksekliği karşılaştırması, A6 istatistik. Henüz kod yazılmadı, model eğitilmedi.
 Girdiler: `docs/fd_lex_dataset_analysis.md` (EDA, kabul edildi), `docs/handwriting_dataset_analysis.md` (Malaysian, yardımcı veri seti), `docs/kararlar.md`.
 Çizim modülüne ve `src/` altındaki mevcut dosyalara dokunulmaz; el yazısı kodu yeni bir alt pakette (`src/handwriting/`) yaşar.
 

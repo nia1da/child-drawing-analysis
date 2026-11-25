@@ -23,7 +23,7 @@
   benzerliğini ölçen **görev uyumu** ve aynı çocuğun iki çizimini karşılaştıran **mutlu–üzgün ayrışma** için kullanılır.
   Çocuğun ruh hali olarak yorumlanmaz.
 - Gerçek klinik çocuk verisi asla bu repoya girmez.
-- **El yazısı modülü (taslak aşamada, kod yok):** ana veri seti FD-LEX Scriptoria (kullanım iznine bağlı), yardımcı Malaysian.
+- **El yazısı modülü (prototip, yalnız sentetik görüntülerle; `src/handwriting/`):** ana veri seti FD-LEX Scriptoria (kullanım iznine bağlı), yardımcı Malaysian.
   Plan `docs/plan_el_yazisi.md`, EDA `docs/fd_lex_dataset_analysis.md` ve `docs/handwriting_dataset_analysis.md`.
   **FD-LEX verisi ve türevleri (sayfa görüntüleri, özellik tabloları, öğrenci kodları) izin netleşmeden Drive, Colab ya da GitHub'a
   yüklenmez; yalnız yerel `data/handwriting/fd_lex/`.** Commit'ten önce notebook çıktıları (tarama görüntüleri, öğrenci kodları) temizlenir.
@@ -121,6 +121,10 @@
   (adaylar `metrics.SMALL_DRAWING_CANDIDATES`; küçüklerde ⚠ oranı büyüklerin ≥ 2 katı) bir kez hesaplanıp sabitlendi;
   tablo `docs/olcumler.md`'de, yeniden hesap `PY -m src.report --small-drawing-table`. Çizgi miktarı mutlak ölçüm, kümede
   değil: küçük çizimde ⚠ alır (doluluk gibi); metin rapor bunun tek olgu olduğunu notla söyler.
+- `src/handwriting/`: El yazısı prototipi (çizim modülünden bağımsız; `src.config`'i kullanmaz): `paths.py` (sabitler, Colab/Drive koruması),
+  `normalize.py`, `masks.py`, `segment.py`, `features.py`, `pipeline.analyze_page`, `synthetic.py` (sentetik sayfalar), `viz.py`, `demo.py`.
+  Ayrıntı `docs/el_yazisi_prototip.md`. Testler sentetik (`tests/test_handwriting.py`); gerçek FD-LEX verisi izne bağlı, yalnız yerel.
+  `tools/check_no_student_data.py` + `tools/install_hook.py`: commit öncesi öğrenci verisi denetimi (pre-commit kancası; her klonda `python tools/install_hook.py`).
 - `notebooks/colab.ipynb`: güncel Colab notebook'u; repoyu clone/pull eder, sadece `src/` fonksiyonlarını çağırır.
 - `notebooks/grad_proj.ipynb`: arşiv (ilk keşif ve denemeler). Çıktıları eski sonuçların kaynağı, silinmemeli
   (`migrate_experiments` bu çıktıları okur); import'lar yeni adlara güncellendi, çıktılar olduğu gibi.

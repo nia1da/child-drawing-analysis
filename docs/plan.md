@@ -39,7 +39,8 @@ Plan: `docs/plan_el_yazisi.md` (taslak v2; denetleyici bulguları işlendi, kull
 | Aşama | Yapılacaklar | Bitti sayılması için | Durum |
 |---|---|---|---|
 | H0. Veri seçimi ve EDA | Malaysian EDA, FD-LEX EDA (denetim + ön fizibilite) | EDA belgeleri kabul edildi | **bitti** (`docs/handwriting_dataset_analysis.md`, `docs/fd_lex_dataset_analysis.md`) |
-| H1. İzin ve yerel koruma (A0) | Kullanım izni sorusu, yerel-only koruma, commit öncesi veri denetimi | İzin yanıtı kayıtlı; koruma testleri | **sürüyor** (izin yanıtı bekleniyor) |
+| H1. İzin ve yerel koruma (A0) | Kullanım izni sorusu, yerel-only koruma, commit öncesi veri denetimi | İzin yanıtı kayıtlı; koruma testleri | **koruma ve denetim bitti** (`paths.py`, pre-commit kancası, testler); **izin yanıtı bekleniyor** |
+| H1b. Prototip (sentetik) | Ölçek/eğiklik, çizgi-kutu-XXX ayrıştırma, el yazısı maskesi, satır segmentasyonu, bileşen boyutu, hiza, sayfa kullanımı, görselleştirme | Sentetik testler geçiyor; sonuçlar görselleştirildi (`docs/el_yazisi_prototip.md`) | **bitti** (2026-11-25); gerçek sayfa pilotu izin sonrası |
 | H2. Çıkarma ve bölme (A1, A7) | Kayıpsız sayfa çıkarma, manifest, tekilleştirme, 27 belirsiz öğrencinin görev/zaman eşlemesi, öğrenci bazlı bölme dondurma | Manifest 5656 satır, `splits.csv` dondurulmuş | başlamadı (plan onayı bekliyor) |
 | H3. Normalizasyon ve ayrıştırma (A2–A4) | Fiziksel ölçek, çizgi/kod kutusu/XXX maskeleri, yazı alanı ve satır segmentasyonu, elle işaretli 60 sayfa | Maske ve segmentasyon kabul ölçütleri geçti | başlamadı |
 | H4. Özellikler ve dayanıklılık (A5, A6) | Harf boyutu, satır hizası, eğim, sayfa kullanımı; çözünürlük/kalem/tarama dayanıklılığı | Her özellik "kararlı / koşullu / dışlandı" | başlamadı |
