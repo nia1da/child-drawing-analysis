@@ -1,6 +1,7 @@
 # Plan
 
-Hedef rapor: `docs/rapor_taslagi.md`. Durum 2026-11-10 itibarıyla.
+Hedef rapor: `docs/rapor_taslagi.md`. Durum 2026-11-25 itibarıyla.
+Bu tablo **Çizim/görüntü modülünün** aşamalarıdır; El yazısı modülünün aşamaları aşağıdaki "El yazısı modülü" bölümünde (`docs/plan_el_yazisi.md`).
 
 | Aşama | Yapılacaklar | Bitti sayılması için | Durum |
 |---|---|---|---|
@@ -30,3 +31,19 @@ Hedef rapor: `docs/rapor_taslagi.md`. Durum 2026-11-10 itibarıyla.
   (`docs/plan_gorev_uyumu.md` adım 1–5, dogrulayici GEÇTİ, 2026-10-21); test metrikleri ölçüldü ve belgelendi (adım 6,
   `docs/plan_test_metrikleri.md`, dogrulayici GEÇTİ, 2026-11-10). Henüz yapılmayan tek parça: **sınıf düzeyi tahmini**
   (rapor taslağında "sınıf düzeyi tahmini" satırı; planlanmadı, klinisyen geri bildirimine kadar bekleyebilir).
+
+## El yazısı modülü (ayrı ve bağımsız; ana veri seti FD-LEX Scriptoria, kullanım iznine bağlı)
+
+Plan: `docs/plan_el_yazisi.md` (taslak v2; denetleyici bulguları işlendi, kullanıcı onayı bekliyor). Kararlar: `docs/kararlar.md` (2026-11-25). Çizim modülüne dokunulmaz.
+
+| Aşama | Yapılacaklar | Bitti sayılması için | Durum |
+|---|---|---|---|
+| H0. Veri seçimi ve EDA | Malaysian EDA, FD-LEX EDA (denetim + ön fizibilite) | EDA belgeleri kabul edildi | **bitti** (`docs/handwriting_dataset_analysis.md`, `docs/fd_lex_dataset_analysis.md`) |
+| H1. İzin ve yerel koruma (A0) | Kullanım izni sorusu, yerel-only koruma, commit öncesi veri denetimi | İzin yanıtı kayıtlı; koruma testleri | **sürüyor** (izin yanıtı bekleniyor) |
+| H2. Çıkarma ve bölme (A1, A7) | Kayıpsız sayfa çıkarma, manifest, tekilleştirme, 27 belirsiz öğrencinin görev/zaman eşlemesi, öğrenci bazlı bölme dondurma | Manifest 5656 satır, `splits.csv` dondurulmuş | başlamadı (plan onayı bekliyor) |
+| H3. Normalizasyon ve ayrıştırma (A2–A4) | Fiziksel ölçek, çizgi/kod kutusu/XXX maskeleri, yazı alanı ve satır segmentasyonu, elle işaretli 60 sayfa | Maske ve segmentasyon kabul ölçütleri geçti | başlamadı |
+| H4. Özellikler ve dayanıklılık (A5, A6) | Harf boyutu, satır hizası, eğim, sayfa kullanımı; çözünürlük/kalem/tarama dayanıklılığı | Her özellik "kararlı / koşullu / dışlandı" | başlamadı |
+| H5. Referans dağılımlar ve rapor | Sınıf x görev x zaman referansları (train), betimleyici rapor | "Bu örneklemde akranlara göre" raporu | başlamadı |
+
+Kapsam dışı: kelime aralığı, okunabilirlik skoru, `Rating` etiketi, model eğitimi. Malaysian veri seti yardımcı olarak korunur.
+

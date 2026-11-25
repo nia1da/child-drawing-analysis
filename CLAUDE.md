@@ -23,6 +23,11 @@
   benzerliğini ölçen **görev uyumu** ve aynı çocuğun iki çizimini karşılaştıran **mutlu–üzgün ayrışma** için kullanılır.
   Çocuğun ruh hali olarak yorumlanmaz.
 - Gerçek klinik çocuk verisi asla bu repoya girmez.
+- **El yazısı modülü (taslak aşamada, kod yok):** ana veri seti FD-LEX Scriptoria (kullanım iznine bağlı), yardımcı Malaysian.
+  Plan `docs/plan_el_yazisi.md`, EDA `docs/fd_lex_dataset_analysis.md` ve `docs/handwriting_dataset_analysis.md`.
+  **FD-LEX verisi ve türevleri (sayfa görüntüleri, özellik tabloları, öğrenci kodları) izin netleşmeden Drive, Colab ya da GitHub'a
+  yüklenmez; yalnız yerel `data/handwriting/fd_lex/`.** Commit'ten önce notebook çıktıları (tarama görüntüleri, öğrenci kodları) temizlenir.
+  Kelime aralığı ve okunabilirlik skoru kapsam dışı; `Rating` etiket değil.
 
 ## Çalışma ortamı
 - Kod yerelde (Mac ya da Windows) yazılır ve test edilir; eğitim Colab'da (T4) yapılır.

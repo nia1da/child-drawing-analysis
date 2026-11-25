@@ -1,6 +1,6 @@
 # Durum
 
-Son güncelleme: 2026-11-10. Aşamalar: `docs/plan.md`; kararlar: `docs/kararlar.md`.
+Son güncelleme: 2026-11-25. Aşamalar: `docs/plan.md`; kararlar: `docs/kararlar.md`.
 
 ## Neredeyiz
 - **Aşama 1 (ince dilim):** bitti.
@@ -18,7 +18,16 @@ Son güncelleme: 2026-11-10. Aşamalar: `docs/plan.md`; kararlar: `docs/kararlar
 - **Görüntü modülü taslak olarak donmuş sayılır** (2026-11-10, kullanıcı kararı): ölçümler, normlar, kalite kuralları, görev uyumu
   ve ayrışma tamam. Performans iyileştirmesi uçtan uca ilk sistem görüldükten sonra.
 
+## El yazısı modülü (2026-11-25)
+- **Karar:** ana veri seti **FD-LEX Scriptoria** (kullanım iznine bağlı); Malaysian yardımcı olarak korunur. EDA belgeleri: `docs/fd_lex_dataset_analysis.md`,
+  `docs/handwriting_dataset_analysis.md`. Plan: `docs/plan_el_yazisi.md` (taslak v2: denetleyici bulguları işlendi; kullanıcı onayı bekliyor; uygulama başlamadı).
+- **Kural:** FD-LEX verisi ve türevleri izin netleşmeden Drive, Colab veya GitHub'a gitmez, yalnız yerel. Notebook çıktıları (öğrenci taramaları, kodlar) commit'ten önce temizlenir.
+- **Kapsam dışı:** kelime aralığı, okunabilirlik skoru; `Rating` etiket değil.
+- **Açık:** (1) kullanım izni ve lisans (FD-LEX / Mercator-Institut'a sorulacak, kullanıcı); (2) kod kitabı (Rating, AlphabetTask, SLS, Wortschatz); (3) plandaki onay bekleyen kararlar
+  (çalışma çözünürlüğü, bölme, elle işaretleme, kabul ölçütleri); (4) belirsiz görev/zaman: 27 öğrenci + tekrar eden sayfanın öğrencisi (tekilleştirince 5 sayfa) = **28**; çözünürlük–sınıf ilişkisi (planda ele alındı, v2).
+
 ## Sıradaki adım
+0. **El yazısı:** `docs/plan_el_yazisi.md` (v2) kullanıcı onayında; onaydan sonra A0 (koruma) ve A1 (çıkarma). A3'e (elle işaretleme) izin yanıtı gelmeden geçilmez.
 1. **İlk uçtan uca dilim** planı (plan modunda): ortak modül JSON sözleşmesi (`modul`, durum, ölçümler, kalite, not), Gradio
    arayüz iskeleti (taslak: görüntü modülünü gösterir), Yazı ve Konuşma modüllerinin ilk ölçümleri. Plan.md'deki aşama sırası
    (arayüz aşama 7'deydi) bu plan onaylanınca güncellenir. Kullanıcı Yazı/Konuşma veri setlerini inceliyor.

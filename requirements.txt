@@ -10,3 +10,6 @@ pillow==11.3.0
 matplotlib==3.10.0
 gdown==5.2.2
 tzdata==2025.2  # Windows'ta zoneinfo saat dilimi verisi
+# El yazısı modülü (FD-LEX, yalnız yerel; Colab runtime sürümü değil, izin netleşmeden Colab'a yüklenmez)
+pymupdf==2.1  # PDF sayfa/görüntü/metin katmanı; ek paketler çeker (onnxruntime, networkx, pymupdf-layout, ...)
+openpyxl==3.1.5  # Datentabelle.xlsx okuma (pandas.read_excel)
