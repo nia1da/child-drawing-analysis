@@ -127,6 +127,7 @@
   `normalize.py`, `masks.py`, `segment.py`, `features.py`, `pipeline.analyze_page`, `synthetic.py` (sentetik sayfalar), `viz.py`, `demo.py`.
   Ayrıntı `docs/el_yazisi_prototip.md`; ayrıca `pdf_io.py` (PDF render + metin katmanı kutuları), `splits.py` (öğrenci bazlı bölme), `pilot.py`, `report.py`, `example_report.py`. Testler sentetik (`tests/test_handwriting*.py`); gerçek FD-LEX verisi izne bağlı, yalnız yerel.
   `tools/check_no_student_data.py` + `tools/install_hook.py`: commit öncesi öğrenci verisi denetimi (pre-commit kancası; her klonda `python tools/install_hook.py`).
+- `src/handwriting/diagramo/`: DiaGraMo (çevrimiçi koordinat verisi, CC BY 4.0; yerel `data/handwriting/diagramo/`): `io.py` (SVC okuma), `render.py` (koordinat → PNG; **tablet y ekseni yukarı**), `labels.py`, `samples.py`, `eda.py`; rol: `docs/el_yazisi_diagramo_eda.md`.
 - `notebooks/colab.ipynb`: güncel Colab notebook'u; repoyu clone/pull eder, sadece `src/` fonksiyonlarını çağırır.
 - `notebooks/grad_proj.ipynb`: arşiv (ilk keşif ve denemeler). Çıktıları eski sonuçların kaynağı, silinmemeli
   (`migrate_experiments` bu çıktıları okur); import'lar yeni adlara güncellendi, çıktılar olduğu gibi.

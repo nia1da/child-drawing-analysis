@@ -40,6 +40,7 @@ Plan: `docs/plan_el_yazisi.md` (taslak v2; denetleyici bulguları işlendi, kull
 |---|---|---|---|
 | H0. Veri seçimi ve EDA | Malaysian EDA, FD-LEX EDA (denetim + ön fizibilite) | EDA belgeleri kabul edildi | **bitti** (`docs/handwriting_dataset_analysis.md`, `docs/fd_lex_dataset_analysis.md`) |
 | H1. İzin ve yerel koruma (A0) | Kullanım izni sorusu, yerel-only koruma, commit öncesi veri denetimi | İzin yanıtı kayıtlı; koruma testleri | **koruma ve denetim bitti** (`paths.py`, pre-commit kancası, testler); **izin yanıtı bekleniyor** |
+| H1d. DiaGraMo araştırması | EDA, etiket analizi, koordinat → PNG prototipi, model fizibilitesi (yerel veri) | `docs/el_yazisi_diagramo_eda.md`; rol kararı bekliyor | **bitti** (2026-11-26) |
 | H1c. Pilot hazırlığı, rapor tasarımı, fizibilite | Bilimsel temel, 20 öğrencilik pilot protokolü ve kodu (izne bağlı), sentetik örnek rapor, referans/ML fizibilitesi, bölme dondurma | Belgeler ve kod hazır; bölme dondurulmuş | **bitti** (2026-11-25); pilot izin sonrası |
 | H1b. Prototip (sentetik) | Ölçek/eğiklik, çizgi-kutu-XXX ayrıştırma, el yazısı maskesi, satır segmentasyonu, bileşen boyutu, hiza, sayfa kullanımı, görselleştirme | Sentetik testler geçiyor; sonuçlar görselleştirildi (`docs/el_yazisi_prototip.md`) | **bitti** (2026-11-25); gerçek sayfa pilotu izin sonrası |
 | H2. Çıkarma ve bölme (A1, A7) | Kayıpsız sayfa çıkarma, manifest, tekilleştirme, 27 belirsiz öğrencinin görev/zaman eşlemesi, öğrenci bazlı bölme dondurma | Manifest 5656 satır, `splits.csv` dondurulmuş | başlamadı (plan onayı bekliyor) |

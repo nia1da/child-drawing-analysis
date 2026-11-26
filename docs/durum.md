@@ -19,6 +19,7 @@ Son güncelleme: 2026-11-25. Aşamalar: `docs/plan.md`; kararlar: `docs/kararlar
   ve ayrışma tamam. Performans iyileştirmesi uçtan uca ilk sistem görüldükten sonra.
 
 ## El yazısı modülü (2026-11-25)
+- **DiaGraMo araştırması (2026-11-26):** EDA, etiket analizi, koordinat → PNG prototipi ve model fizibilitesi tamam (`docs/el_yazisi_diagramo_eda.md`; kod `src/handwriting/diagramo/`, `tests/test_diagramo.py`); 16 örnek görüntü yerelde. Rolü (FD-LEX için etiketli doğrulama kümesi mi, model eğitimi mi) kullanıcı kararı bekliyor; ilk öneri: kendi geometrik özelliklerimizi HLS maddeleriyle karşılaştırmak.
 - **Bilimsel hedef (netleşti):** grafomotor gelişimle ilişkili biçimsel/görsel-mekânsal özellikleri ölçmek, referanslarla karşılaştırmak, uzmana açıklanabilir rapor sunmak; motor beceriyi doğrudan ölçtüğümüzü ve BHK vb. puan ürettiğimizi iddia etmeyiz; okunabilirlik, disgrafi sınıflandırması, risk skoru kapsam dışı. **Yalnız FD-LEX; Malaysian arşiv.**
 - **Son iş:** `docs/el_yazisi_bilimsel_temel.md` (özellik–kaynak haritası; BHK madde düzeyi doğrulanamadı), `docs/el_yazisi_pilot_protokolu.md` + `src/handwriting/pilot.py` (20 öğrenci, izin geçidi `permission.json`; çalıştırılmadı),
   `docs/el_yazisi_arastirma_fizibilite.md` (5 soru; v1'de ML yok), `docs/el_yazisi_ornek_rapor.md` (sentetik örnek rapor + işaretli bölgeler), `docs/el_yazisi_gelecek_calisma.md` (transkriptler), öğrenci bazlı bölme donduruldu (hash `docs/kararlar.md`'de).
