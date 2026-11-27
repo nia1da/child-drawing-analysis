@@ -1,3 +1,5 @@
+> **PASİF (2026-11-27):** el yazısı modülü artık DiaGraMo ile sürüyor; FD-LEX Scriptoria ve Malaysian çalışmaları pasif/arşiv durumunda (dosya ve kod silinmedi, kullanılmıyor). Güncel belge: `docs/el_yazisi_diagramo_deney.md`. Karar: `docs/kararlar.md`.
+
 # Plan: El yazısı modülü, önişleme ve özellik çıkarma (FD-LEX Scriptoria)
 
 **Güncel bilimsel hedef (2026-11-25):** grafomotor gelişimle ilişkili biçimsel/görsel-mekânsal özellikleri ölçmek, referanslarla karşılaştırmak, açıklanabilir uzman raporu üretmek (`docs/el_yazisi_bilimsel_temel.md`); statik görüntüden motor beceri ölçtüğümüz iddia edilmez. Yalnız FD-LEX (Malaysian arşiv). Fizibilite: `docs/el_yazisi_arastirma_fizibilite.md`; pilot: `docs/el_yazisi_pilot_protokolu.md`; rapor: `docs/el_yazisi_ornek_rapor.md`; transkriptler (gelecek): `docs/el_yazisi_gelecek_calisma.md`.

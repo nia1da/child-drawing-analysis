@@ -1,3 +1,7 @@
+> **PASİF (2026-11-27):** el yazısı modülü artık DiaGraMo ile sürüyor; FD-LEX Scriptoria ve Malaysian çalışmaları pasif/arşiv durumunda (dosya ve kod silinmedi, kullanılmıyor). Güncel belge: `docs/el_yazisi_diagramo_deney.md`. Karar: `docs/kararlar.md`.
+
+> (Bu belgenin özellik–kaynak haritası ve yorum ilkeleri DiaGraMo çalışması için de geçerlidir.)
+
 # El yazısı özelliklerinin bilimsel temeli
 
 Tarih: 2026-11-25. Bilimsel hedef (2026-11-25, yeniden netleştirildi): çocukların el yazılarındaki grafomotor gelişimle ilişkili **biçimsel ve görsel-mekânsal özellikleri ölçmek**,

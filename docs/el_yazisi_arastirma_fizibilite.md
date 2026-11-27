@@ -1,3 +1,5 @@
+> **PASİF (2026-11-27):** el yazısı modülü artık DiaGraMo ile sürüyor; FD-LEX Scriptoria ve Malaysian çalışmaları pasif/arşiv durumunda (dosya ve kod silinmedi, kullanılmıyor). Güncel belge: `docs/el_yazisi_diagramo_deney.md`. Karar: `docs/kararlar.md`.
+
 # Referans analizi ve makine öğrenmesi fizibilitesi (Scriptoria)
 
 Tarih: 2026-11-25. Bu belge **uygulanabilirlik değerlendirmesidir**; hiçbir araştırma sorusu için gerçek sayfa ölçümü yapılmadı (izin geçidi). Sayılar yalnız meta veriden

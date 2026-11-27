@@ -1,3 +1,5 @@
+> **PASİF (2026-11-27):** el yazısı modülü artık DiaGraMo ile sürüyor; FD-LEX Scriptoria ve Malaysian çalışmaları pasif/arşiv durumunda (dosya ve kod silinmedi, kullanılmıyor). Güncel belge: `docs/el_yazisi_diagramo_deney.md`. Karar: `docs/kararlar.md`.
+
 # Pilot protokolü: 20 öğrenci, gerçek sayfalar (izne bağlı)
 
 Tarih: 2026-11-25. **Durum: hazır, çalıştırılmadı.** Gerçek FD-LEX sayfaları yalnız kullanım izni netleştikten sonra okunur. Kod: `src/handwriting/pilot.py`
